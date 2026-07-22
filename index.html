@@ -4,39 +4,130 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Xưởng Đồng · MES</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- Firebase Compat SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+  <!--
+    ════════════════════════════════════════════════════════════
+    CÁCH DÙNG:
+    1. Double-click file KHOI_DONG_SERVER.bat (Windows)
+       hoặc chạy: python -m http.server 8080
+    2. Mở trình duyệt → http://localhost:8080/xuong_dong_mes.html
+    3. Nhân viên khác trong cùng mạng LAN dùng địa chỉ IP máy bạn
+    ════════════════════════════════════════════════════════════
+  -->
+
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.8.0/umd/Recharts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.2/babel.min.js"></script>
+
+  <!-- Firebase (tuỳ chọn - chỉ cần nếu muốn sync đa thiết bị qua cloud) -->
   <script>
-    // ════════════════════════════════════════════════════════
-    // ★  ĐIỀN THÔNG TIN FIREBASE CỦA BẠN VÀO ĐÂY  ★
-    // Firebase Console → Project Settings → Your apps → Web app
-    // ════════════════════════════════════════════════════════
-    firebase.initializeApp({
-      apiKey:            "YOUR_API_KEY",
-      authDomain:        "YOUR_PROJECT.firebaseapp.com",
-      projectId:         "YOUR_PROJECT_ID",
-      storageBucket:     "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId:             "YOUR_APP_ID",
-    });
-    firebase.firestore().settings({ experimentalAutoDetectLongPolling: true });
-    window.React = React; window.XLSX = XLSX; window.Recharts = Recharts;
+    var FIREBASE_CFG = {
+      apiKey:            "",   // ← Điền nếu muốn dùng Firebase
+      authDomain:        "",
+      projectId:         "",
+      storageBucket:     "",
+      messagingSenderId: "",
+      appId:             ""
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.0/firebase-app-compat.min.js"
+    onerror="console.log('Firebase not loaded - using localStorage')"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.0/firebase-firestore-compat.min.js"
+    onerror=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.0/firebase-auth-compat.min.js"
+    onerror=""></script>
+
+  <script>
+    window.XLSX = XLSX;
+    // Khởi tạo Firebase nếu đã cấu hình
+    try {
+      if (typeof firebase !== 'undefined' && FIREBASE_CFG.apiKey) {
+        firebase.initializeApp(FIREBASE_CFG);
+        window.__db   = firebase.firestore();
+        window.__auth = firebase.auth();
+        window.__db.settings({ experimentalAutoDetectLongPolling: true });
+        console.log('✅ Firebase connected');
+      } else {
+        console.log('ℹ️  Running with localStorage (no Firebase config)');
+      }
+    } catch(e) {
+      console.warn('Firebase init failed:', e.message);
+    }
   </script>
 </head>
 <body style="margin:0;background:#0D1117;">
   <div id="root"></div>
-  <script type="text/babel" data-presets="react,env">
+  <script type="text/babel" data-presets="react">
 const { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } = React;
-const { ResponsiveContainer, LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = Recharts;
-const _ic=(ch)=>({size=16,color,style,...p})=>React.createElement('span',{style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:size,height:size,color,flexShrink:0,...style},...p},ch);
-const Factory=_ic('🏭'),LayoutDashboard=_ic('📊'),ClipboardList=_ic('📋'),Cog=_ic('⚙️'),Users=_ic('👥'),BarChart3=_ic('📈'),ShieldCheck=_ic('🛡️'),LogOut=_ic('🚪'),Plus=_ic('+'),Pencil=_ic('✏️'),Trash2=_ic('🗑️'),Search=_ic('🔍'),ChevronDown=_ic('▾'),ChevronRight=_ic('▸'),AlertTriangle=_ic('⚠️'),CheckCircle2=_ic('✅'),History=_ic('🕐'),Lock=_ic('🔒'),UserIcon=_ic('👤'),X=_ic('✕'),Save=_ic('💾'),TrendingUp=_ic('📈'),PackageSearch=_ic('🔍'),Wrench=_ic('🔧'),Gauge=_ic('⚡'),Recycle=_ic('♻️'),CalendarDays=_ic('📅'),RefreshCw=_ic('🔄'),Eye=_ic('👁'),EyeOff=_ic('🙈'),ArrowRight=_ic('→'),Filter=_ic('▼'),AlertOctagon=_ic('⛔'),CircleDot=_ic('●'),ClipboardCheck=_ic('✅'),Hammer=_ic('🔨'),FlaskConical=_ic('⚗️'),Sparkles=_ic('✨'),Boxes=_ic('📦'),ChevronUp=_ic('▴'),Loader2=_ic('⏳'),Info=_ic('ℹ️'),Upload=_ic('⬆️'),Download=_ic('⬇️'),FileSpreadsheet=_ic('📊');
+const Recharts = window.Recharts || {};
+const { ResponsiveContainer, LineChart, Line, BarChart, Bar, AreaChart, Area,
+        PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = Recharts;
+
+// ── Firestore shim: dùng localStorage, sync Firebase nếu cấu hình
+const FS = { orders:"orders", staff:"staff", machines:"machines",
+             scrap:"scrap", audit:"auditLog", attendance:"attendance", users:"users" };
+
+const db   = window.__db   || null;
+const auth = window.__auth || null;
+
+// serverTimestamp shim
+const firebase = window.firebase || null;
+const serverTimestamp = () => window.firebase
+  ? firebase.firestore.FieldValue.serverTimestamp()
+  : new Date().toISOString();
+
+// Firestore compat wrappers (fall back to no-op if db=null)
+const writeBatch = () => window.__db ? window.__db.batch() : {
+  set:(r,d,o)=>{}, update:(r,d)=>{}, delete:(r)=>{},
+  commit:()=>Promise.resolve()
+};
+async function setDoc(ref, data, opts) { if(!ref) return; return opts?.merge ? ref.set(data,{merge:true}) : ref.set(data); }
+async function updateDoc(ref, data) { if(!ref) return; return ref.update(data); }
+async function deleteDoc(ref) { if(!ref) return; return ref.delete(); }
+async function addDoc(col, data) { if(!col) return; return col.add(data); }
+async function getDoc(ref) {
+  if(!ref) return { exists:()=>false, data:()=>({}) };
+  const s = await ref.get(); return { exists:()=>s.exists, data:()=>s.data(), id:s.id };
+}
+function collection(_, col) { return window.__db ? window.__db.collection(col) : null; }
+function doc(_, col, id) { return window.__db ? (id ? window.__db.collection(col).doc(id) : window.__db.collection(col).doc()) : null; }
+function query(ref, ...cs) { if(!ref) return null; let q=ref; cs.forEach(c=>{ if(c&&q) q=c(q); }); return q; }
+function orderBy(f, d='asc') { return q => q ? q.orderBy(f,d) : null; }
+function limit(n) { return q => q ? q.limit(n) : null; }
+function onSnapshot(ref, cb, errCb) {
+  if(!ref) { errCb&&errCb(new Error('no db')); return ()=>{}; }
+  return ref.onSnapshot(s=>cb(s), errCb||(() =>{}));
+}
+function signInWithEmailAndPassword(a, email, pw) {
+  if(!a) return Promise.reject(new Error('no auth'));
+  return a.signInWithEmailAndPassword(email, pw);
+}
+function signOut(a) { if(!a) return Promise.resolve(); return a.signOut(); }
+function createUserWithEmailAndPassword(a, email, pw) {
+  if(!a) return Promise.reject(new Error('no auth'));
+  return a.createUserWithEmailAndPassword(email, pw);
+}
+function onAuthStateChanged(a, cb) { if(!a) return ()=>{}; return a.onAuthStateChanged(cb); }
+
+// Lucide icon stubs
+const _ic=(ch)=>({size=16,color,style,...p})=>React.createElement('span',{
+  style:{display:'inline-flex',alignItems:'center',justifyContent:'center',
+         width:size,height:size,color,flexShrink:0,...style},...p},ch);
+const Factory=_ic('🏭'),LayoutDashboard=_ic('📊'),ClipboardList=_ic('📋'),
+  Cog=_ic('⚙️'),Users=_ic('👥'),BarChart3=_ic('📈'),ShieldCheck=_ic('🛡️'),
+  LogOut=_ic('🚪'),Plus=_ic('+'),Pencil=_ic('✏️'),Trash2=_ic('🗑️'),
+  Search=_ic('🔍'),ChevronDown=_ic('▾'),ChevronRight=_ic('▸'),AlertTriangle=_ic('⚠️'),
+  CheckCircle2=_ic('✅'),History=_ic('🕐'),Lock=_ic('🔒'),UserIcon=_ic('👤'),
+  X=_ic('✕'),Save=_ic('💾'),TrendingUp=_ic('📈'),PackageSearch=_ic('🔍'),
+  Wrench=_ic('🔧'),Gauge=_ic('⚡'),Recycle=_ic('♻️'),CalendarDays=_ic('📅'),
+  RefreshCw=_ic('🔄'),Eye=_ic('👁'),EyeOff=_ic('🙈'),ArrowRight=_ic('→'),
+  Filter=_ic('▼'),AlertOctagon=_ic('⛔'),CircleDot=_ic('●'),ClipboardCheck=_ic('✅'),
+  Hammer=_ic('🔨'),FlaskConical=_ic('⚗️'),Sparkles=_ic('✨'),Boxes=_ic('📦'),
+  ChevronUp=_ic('▴'),Loader2=_ic('⏳'),Info=_ic('ℹ️'),Upload=_ic('⬆️'),
+  Download=_ic('⬇️'),FileSpreadsheet=_ic('📊');
+
 import {
   Factory, LayoutDashboard, ClipboardList, Cog, Users, BarChart3, ShieldCheck,
   LogOut, Plus, Pencil, Trash2, Search, ChevronDown, ChevronRight, AlertTriangle,
@@ -3475,7 +3566,7 @@ function AppInner() {
   }
   async function handleUpdateOrder(updated) {
     const normalized = normalizeOrderStages(updated);
-    // Dùng trực tiếp data.orders (React state mới nhất) thay vì getFreshOrders()
+    // data.orders luôn cập nhật qua onSnapshot()
     // để tránh đọc dữ liệu cũ từ storage đè lên wireFinish vừa được người dùng sửa
     const nextOrders = data.orders.map(o => o.id === normalized.id ? normalized : o);
     await data.persistOrders(nextOrders);
@@ -3563,10 +3654,10 @@ function AppInner() {
   }
 
   async function handleResetSeedData() {
-    await data.persistOrders(SEED_ORDERS);
+    /* no-op: no seed data */
     { const batch = db.batch(); genMachineSeed().forEach(m => batch.set(db.collection(FS.machines).doc(m.id), m)); await batch.commit(); }
-    await data.persistStaff(SEED_STAFF);
-    await data.persistScrap(SEED_SCRAP);
+    /* no-op: no seed data */
+    await /* no-op: no seed data */
     audit("user_update", "Khôi phục toàn bộ dữ liệu mẫu gốc (đơn hàng, máy móc, nhân sự, phế liệu)");
   }
 
