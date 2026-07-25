@@ -64,6 +64,9 @@
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"
     onload="setStatus('React ✓')" onerror="setStatus('❌ Không tải được React — cần internet lần đầu')"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Recharts (UMD) cần PropTypes làm external global — thiếu dòng này sẽ crash
+       ngay khi vẽ biểu đồ với lỗi "Cannot read properties of undefined (reading 'oneOfType')" -->
+  <script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js" onerror="window.PropTypes={}"></script>
   <script src="https://cdn.jsdelivr.net/npm/recharts@2.8.0/umd/Recharts.min.js" onerror="window.Recharts={}"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="window.XLSX={}"></script>
   <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.0/firebase-app-compat.min.js" onerror=""></script>
