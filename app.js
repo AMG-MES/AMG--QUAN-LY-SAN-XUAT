@@ -3864,7 +3864,8 @@ function QuickEntryForm({
 function ActivityFeed({
   auditLog
 }) {
-  const relevant = auditLog.filter(a => a.type === "production_entry" || a.type === "scrap_add").slice(0, 8);
+  // Kéo trung có mục "Lịch sử nhập Kéo trung" riêng ở dưới — không lặp lại ở đây
+  const relevant = auditLog.filter(a => (a.type === "production_entry" && a.stageKey !== "keo_trung") || a.type === "scrap_add").slice(0, 8);
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
