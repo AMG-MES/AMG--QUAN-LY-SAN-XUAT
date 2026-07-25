@@ -2898,17 +2898,31 @@ function useAppData() {
     let unsubs = [];
     seedIfEmptyOffline().finally(() => {
       if (cancelled) return;
-      unsubs = [db.collection(FS.orders).orderBy("createdAt", "desc").onSnapshot(s => {
-      setOrders(s.docs.map(d => ({
+      unsubs = [db.collection(FS.orders).onSnapshot(s => {
+      // Sắp xếp phía client (không dùng orderBy("createdAt") của Firestore) vì
+      // Firestore sẽ ÂM THẦM LOẠI BỎ khỏi kết quả bất kỳ document nào thiếu đúng
+      // trường đang orderBy — mà _batch()/persistOrders chỉ ghi "updatedAt", không
+      // ghi "createdAt", nên đơn hàng mới thêm sẽ biến mất hoàn toàn khỏi danh sách.
+      const list = s.docs.map(d => ({
         id: d.id,
         ...d.data()
-      })));
+      }));
+      list.sort((a, b) => {
+        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || a.orderDate || 0).getTime();
+        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || b.orderDate || 0).getTime();
+        return tb - ta;
+      });
+      setOrders(list);
       done();
-    }, () => done()), db.collection(FS.staff).orderBy("team").onSnapshot(s => {
-      setStaff(s.docs.map(d => ({
+    }, () => done()), db.collection(FS.staff).onSnapshot(s => {
+      // Tương tự: không dùng orderBy("team") vì Firestore sẽ loại bỏ nhân sự
+      // thiếu trường "team" khỏi kết quả — sắp xếp phía client thay vào đó.
+      const list = s.docs.map(d => ({
         id: d.id,
         ...d.data()
-      })));
+      }));
+      list.sort((a, b) => (a.team || "").localeCompare(b.team || ""));
+      setStaff(list);
       done();
     }, () => done()), db.collection(FS.machines).onSnapshot(s => {
       setMachines(s.docs.map(d => ({
