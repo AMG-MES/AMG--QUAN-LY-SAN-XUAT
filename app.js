@@ -2778,38 +2778,33 @@ function normalizeOrderStages(order) {
 }
 
 // Quy trình công đoạn phụ thuộc loại dây, suy ra từ "quy cách" (spec):
-//  - Dây ủ mềm (wireFinish="mềm")       -> [Kéo trung] (thành phẩm ngay tại đây)
-//  - Dây đồng BC 1 sợi (vd "0.254BC")  -> Kéo tinh, Ủ nhiệt
-//  - Dây đồng TC 1 sợi (vd "0.16TC")   -> Kéo tinh, Mạ thiếc
-//  - Dây đồng Bện (vd "7/0.150BC")     -> Kéo tinh, Ủ nhiệt/Mạ thiếc, Bện
-// Kéo trung là công đoạn NỘI BỘ cung cấp nguyên vật liệu — KHÔNG hiện trong
-// BOM của đơn hàng thông thường (trừ đơn đặt Dây ủ mềm trực tiếp từ Kéo trung).
+//  1) Dây ủ mềm ghi nhận trực tiếp tại Kéo trung + có tên khách hàng
+//     (wireFinish="mềm", đặt bởi handleKeoTrungEntry/handleQuickEntry)
+//     -> [Kéo trung] — thành phẩm ngay tại đây, KHÔNG đi tiếp công đoạn nào khác.
+//  2) Phôi Kéo trung không gắn khách hàng cụ thể -> nguyên liệu chung cho công đoạn sau,
+//     không tự gắn vào BOM của đơn nào (xử lý ở handleKeoTrungEntry, không liên quan hàm này).
+//  3) Quy cách dạng số đơn, không hậu tố BC/TC, không phải dây bện (vd "0.2")
+//     -> Kéo tinh, Kéo siêu tinh, Ủ nhiệt — thành phẩm tại Ủ nhiệt.
+//  4) Dây bện loại BC (vd "7/0.2BC") -> Kéo tinh, Kéo siêu tinh, Ủ nhiệt, Bện — thành phẩm tại Bện.
+//  5) Dây bện loại TC (vd "7/0.2TC") -> Kéo tinh, Kéo siêu tinh, Mạ thiếc, Bện — thành phẩm tại Bện.
+// Kéo trung là công đoạn NỘI BỘ cung cấp phôi — chỉ xuất hiện trong BOM của đơn hàng
+// khi đơn đó được ghi nhận thành phẩm trực tiếp tại Kéo trung (mục 1).
 function getApplicableStages(order) {
-  // Dây ủ mềm: chỉ 1 công đoạn Kéo trung, thành phẩm ngay tại đây.
-  // Điều kiện: (1) đã đánh dấu wireFinish="mềm" thủ công, HOẶC
-  //            (2) quy cách không có hậu tố BC/TC và không phải dây bện
-  //                (tức là không xác định được loại — mặc định coi là dây ủ mềm)
+  // Mục 1: Dây ủ mềm ghi nhận trực tiếp tại Kéo trung (có tên khách hàng) → dừng tại đây.
+  // wireFinish="mềm" chỉ được đặt tường minh bởi handleKeoTrungEntry (khi chọn khách hàng)
+  // hoặc handleQuickEntry (khi chọn "Dây ủ mềm" ngay tại Kéo trung) — không tự suy luận từ spec.
+  if (order.wireFinish === "mềm") return ["keo_trung"];
+
   const specStr = order.spec !== undefined && order.spec !== null ? String(order.spec).trim().toUpperCase() : "";
   const isStranded = specStr.includes("/");
-  const isBC = /\dBC\b/.test(specStr) || /BC$/.test(specStr);
   const isTC = /\dTC\b/.test(specStr) || /TC$/.test(specStr);
-  const hasKnownType = isBC || isTC || isStranded;
-  // Nhận diện dây ủ mềm:
-  // 1) Đã đánh dấu wireFinish="mềm" thủ công, HOẶC
-  // 2) Quy cách không có BC/TC/bện VÀ KHÔNG có dữ liệu các công đoạn downstream
-  //    (Kéo tinh, Ủ nhiệt, Mạ thiếc, Bện) — nếu đã có downstream thì là đơn thường.
-  const hasDownstreamData = ["keo_tinh", "keo_sieu_tinh", "u_nhiet", "ma_thiec", "ben"].some(k => (order.stages?.[k]?.done || 0) > 0);
-  // Spec không có BC/TC và không có downstream data → luôn là dây ủ mềm,
-  // bỏ qua wireFinish đang lưu (kể cả "cứng" bị gán nhầm từ form Kéo trung).
-  // wireFinish="cứng" chỉ có hiệu lực khi spec đã có BC/TC rõ ràng.
-  const isSoftWire = order.wireFinish === "mềm" || !hasKnownType && specStr !== "" && !hasDownstreamData;
-  if (isSoftWire) return ["keo_trung"];
 
-  // Đơn thông thường (wireFinish="cứng" hoặc có BC/TC/bện): bắt đầu từ Kéo tinh
-  const keys = ["keo_tinh"];
+  // Mục 3/4/5: mọi đơn còn lại (quy cách số đơn, BC, hoặc TC) đều bắt đầu từ Kéo tinh,
+  // luôn qua Kéo siêu tinh, rồi Ủ nhiệt (BC/số đơn) hoặc Mạ thiếc (TC), cộng Bện nếu là dây bện.
+  const keys = ["keo_tinh", "keo_sieu_tinh"];
   keys.push(isTC ? "ma_thiec" : "u_nhiet");
   if (isStranded) keys.push("ben");
-  // Giữ lại công đoạn nào đã có số liệu thực tế
+  // Giữ lại công đoạn nào đã có số liệu thực tế (phòng trường hợp dữ liệu cũ lệch quy tắc)
   STAGES.forEach(s => {
     const done = order.stages?.[s.key]?.done || 0;
     if (done > 0 && !keys.includes(s.key) && s.key !== "keo_trung") keys.push(s.key);
@@ -9621,14 +9616,12 @@ function AppInner() {
       spec: null,
       customer: customer || null
     };
-    const freshLog = data.auditLog;
-    const nextLog = [newEntry, ...freshLog].slice(0, 500);
-    await Promise.all(data.auditLog.slice(0, 10).map(e => db.collection(FS.audit).doc(e.id).set({
-      ...e,
-      ts: e.ts || firebase.firestore.FieldValue.serverTimestamp()
-    }, {
-      merge: true
-    })));
+    // Lưu ý: trước đây newEntry được tạo ra nhưng KHÔNG BAO GIỜ được lưu vào audit log
+    // (chỉ ghi lại các bản ghi cũ đã có sẵn) — khiến "Lịch sử nhập Kéo trung" luôn hiện 0 lượt.
+    await db.collection(FS.audit).doc(newEntry.id).set({
+      ...newEntry,
+      ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
   }
   async function handleAddOrder(newOrder) {
     // onSnapshot keeps data.orders fresh
