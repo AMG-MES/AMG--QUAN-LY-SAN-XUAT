@@ -5225,6 +5225,31 @@ function QCPage({
     });
   }, [scrap, orders, auditLog]);
   const total = scrap.reduce((a, s) => a + (s.qty || 0), 0);
+  // Phế liệu theo Mã NVL (A/B/C...) tổng hợp theo ngày — bảng chéo Ngày × Mã liệu
+  const byMaterialAndDate = useMemo(() => {
+    const materials = [...new Set(scrap.map(s => s.materialCode || "Khác"))].sort((a, b) => a.localeCompare(b));
+    const dateMap = {};
+    scrap.forEach(s => {
+      const mat = s.materialCode || "Khác";
+      const d = s.date || "—";
+      if (!dateMap[d]) dateMap[d] = { total: 0 };
+      dateMap[d][mat] = (dateMap[d][mat] || 0) + (s.qty || 0);
+      dateMap[d].total += s.qty || 0;
+    });
+    const rows = Object.entries(dateMap).map(([date, vals]) => ({
+      date,
+      ...vals
+    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const byMaterialTotals = {};
+    materials.forEach(m => {
+      byMaterialTotals[m] = scrap.filter(s => (s.materialCode || "Khác") === m).reduce((a, s) => a + (s.qty || 0), 0);
+    });
+    return {
+      materials,
+      rows,
+      byMaterialTotals
+    };
+  }, [scrap]);
   const sorted = [...scrap].sort((a, b) => new Date(b.date) - new Date(a.date));
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Kiểm soát chất lượng",
@@ -5380,7 +5405,90 @@ function QCPage({
     const totalProd = byStageDetailed.reduce((a, r) => a + r.production, 0);
     const totalScrap = byStageDetailed.reduce((a, r) => a + r.scrapQty, 0);
     return totalProd + totalScrap > 0 ? `${(totalScrap / (totalProd + totalScrap) * 100).toFixed(2)}%` : "—";
-  })()))))), /*#__PURE__*/React.createElement("div", {
+  })()))))), byMaterialAndDate.materials.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mes-card mes-scroll-x",
+    style: {
+      marginBottom: 18,
+      padding: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 10,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-display",
+    style: {
+      fontSize: 15,
+      fontWeight: 700
+    }
+  }, "Phế liệu theo Mã NVL — tổng hợp theo ngày"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, byMaterialAndDate.materials.map(m => /*#__PURE__*/React.createElement(Badge, {
+    key: m,
+    color: m === "Khác" ? COLORS.textFaint : COLORS.copper
+  }, "Mã ", m, ": ", fmtNum(byMaterialAndDate.byMaterialTotals[m]), " kg")))), /*#__PURE__*/React.createElement("table", {
+    className: "mes-table"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Ngày"), byMaterialAndDate.materials.map(m => /*#__PURE__*/React.createElement("th", {
+    key: m,
+    style: {
+      textAlign: "right"
+    }
+  }, "Mã ", m, " (kg)")), /*#__PURE__*/React.createElement("th", {
+    style: {
+      textAlign: "right"
+    }
+  }, "Tổng ngày (kg)"))), /*#__PURE__*/React.createElement("tbody", null, byMaterialAndDate.rows.map(r => /*#__PURE__*/React.createElement("tr", {
+    key: r.date
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "mes-mono",
+    style: {
+      fontWeight: 600
+    }
+  }, fmtDate(r.date)), byMaterialAndDate.materials.map(m => /*#__PURE__*/React.createElement("td", {
+    key: m,
+    className: "mes-mono",
+    style: {
+      textAlign: "right",
+      color: r[m] ? COLORS.red : COLORS.textFaint
+    }
+  }, r[m] ? fmtNum(r[m]) : "—")), /*#__PURE__*/React.createElement("td", {
+    className: "mes-mono",
+    style: {
+      textAlign: "right",
+      fontWeight: 700,
+      color: COLORS.copperBright
+    }
+  }, fmtNum(r.total))))), /*#__PURE__*/React.createElement("tfoot", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+    style: {
+      fontWeight: 700,
+      borderTop: `2px solid ${COLORS.border}`
+    }
+  }, "Tổng cộng"), byMaterialAndDate.materials.map(m => /*#__PURE__*/React.createElement("td", {
+    key: m,
+    className: "mes-mono",
+    style: {
+      textAlign: "right",
+      fontWeight: 700,
+      borderTop: `2px solid ${COLORS.border}`
+    }
+  }, fmtNum(byMaterialAndDate.byMaterialTotals[m]))), /*#__PURE__*/React.createElement("td", {
+    className: "mes-mono",
+    style: {
+      textAlign: "right",
+      fontWeight: 800,
+      color: COLORS.copperBright,
+      borderTop: `2px solid ${COLORS.border}`
+    }
+  }, fmtNum(total)))))), /*#__PURE__*/React.createElement("div", {
     className: "mes-card mes-scroll-x"
   }, sorted.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     icon: FlaskConical,
