@@ -3941,8 +3941,11 @@ function DashboardPage({
     STAGES.forEach(s => {
       t[s.key] = orders.reduce((acc, o) => acc + (o.stages?.[s.key]?.done || 0), 0);
     });
+    // Kéo trung: cộng thêm sản lượng phôi không gắn khách hàng cụ thể (không nằm trong
+    // stages.keo_trung.done của order nào) — lấy từ audit log để phản ánh đúng tổng thực tế.
+    t.keo_trung = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
     return t;
-  }, [orders]);
+  }, [orders, auditLog]);
   const machineStats = useMemo(() => {
     const t = {
       running: 0,
@@ -5181,7 +5184,8 @@ function QCPage({
   currentUser,
   onAdd,
   onDelete,
-  orders
+  orders,
+  auditLog
 }) {
   const {
     askConfirm
@@ -5203,8 +5207,12 @@ function QCPage({
     scrap.forEach(s => {
       scrapByStage[s.stage] = (scrapByStage[s.stage] || 0) + (s.qty || 0);
     });
+    // Kéo trung: sản lượng thực tế = tổng mọi lượt nhập tại Kéo trung (kể cả phôi
+    // không gắn khách hàng cụ thể) — lấy từ audit log, không chỉ cộng theo đơn hàng,
+    // vì phôi không gắn đơn sẽ không nằm trong stages.keo_trung.done của order nào cả.
+    const keoTrungTotal = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
     return STAGES.map(s => {
-      const production = (orders || []).reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0);
+      const production = s.key === "keo_trung" ? keoTrungTotal : (orders || []).reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0);
       const scrapQty = scrapByStage[s.key] || 0;
       const pct = production + scrapQty > 0 ? scrapQty / (production + scrapQty) * 100 : null;
       return {
@@ -5215,7 +5223,7 @@ function QCPage({
         pct
       };
     });
-  }, [scrap, orders]);
+  }, [scrap, orders, auditLog]);
   const total = scrap.reduce((a, s) => a + (s.qty || 0), 0);
   const sorted = [...scrap].sort((a, b) => new Date(b.date) - new Date(a.date));
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
@@ -7219,11 +7227,14 @@ function ReportsPage({
 }) {
   const [customerFilter, setCustomerFilter] = useState("all");
   const [keoTrungGranularity, setKeoTrungGranularity] = useState("day");
-  const liveStageData = useMemo(() => STAGES.map(s => ({
-    name: s.short,
-    fullName: s.label,
-    value: orders.reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0)
-  })), [orders]);
+  const liveStageData = useMemo(() => {
+    const keoTrungTotal = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
+    return STAGES.map(s => ({
+      name: s.short,
+      fullName: s.label,
+      value: s.key === "keo_trung" ? keoTrungTotal : orders.reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0)
+    }));
+  }, [orders, auditLog]);
   const historicalData = useMemo(() => timeseries.map((t, i) => ({
     ky: "Kỳ " + (i + 1),
     "Kéo trung": t.keo_trung,
@@ -7874,8 +7885,9 @@ function ReportsPage({
       color: COLORS.textDim
     }
   })))), (() => {
+    const keoTrungTotalForStageData = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
     const stageData = STAGES.map(s => {
-      const production = orders.reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0);
+      const production = s.key === "keo_trung" ? keoTrungTotalForStageData : orders.reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0);
       const scrapForStage = scrap.filter(sc => sc.stage === s.key);
       const scrapQty = scrapForStage.reduce((a, sc) => a + (sc.qty || 0), 0);
       const pctScrap = production + scrapQty > 0 ? (scrapQty / (production + scrapQty) * 100).toFixed(2) : null;
@@ -9848,7 +9860,8 @@ function AppInner() {
     currentUser: currentUser,
     onAdd: handleAddScrap,
     onDelete: handleDeleteScrap,
-    orders: data.orders
+    orders: data.orders,
+    auditLog: data.auditLog
   }), activeTab === "staff" && /*#__PURE__*/React.createElement(StaffPage, {
     staff: data.staff,
     isAdmin: isAdmin,
