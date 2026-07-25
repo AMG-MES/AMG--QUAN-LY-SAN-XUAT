@@ -9413,6 +9413,8 @@ function AppInner() {
     storageError: data.storageError
   });
   const isAdmin = currentUser.role === "admin";
+  // Alias dùng trong các handler bên dưới (đơn hàng luôn lấy từ dữ liệu mới nhất qua onSnapshot)
+  const baseOrders = data.orders;
   function audit(type, detail, targetId, extra) {
     db.collection(FS.audit).add({
       id: uid("AL"),
@@ -9540,7 +9542,8 @@ function AppInner() {
       return updated;
     });
     await data.persistOrders(nextOrders);
-    await data.persistAuditLog(freshLog.filter(e => e.id !== entryId));
+    // Lưu ý: persistAuditLog (_batch) chỉ set/merge, KHÔNG xoá — phải xoá doc trực tiếp
+    await db.collection(FS.audit).doc(entryId).delete().catch(() => {});
     audit("production_entry_delete", `Xóa lượt nhập: ${entry.customer} / ${entry.spec} — ${fmtNum(entry.qty)} kg tại "${STAGE_MAP[entry.stageKey]?.label}"`, entry.targetId);
   }
   async function handleKeoTrungEntry({
@@ -9642,8 +9645,9 @@ function AppInner() {
   }
   async function handleDeleteOrder(id) {
     // onSnapshot keeps data.orders fresh
+    // Lưu ý: persistOrders (_batch) chỉ set/merge, KHÔNG xoá — phải xoá doc trực tiếp
     const o = baseOrders.find(x => x.id === id);
-    await data.persistOrders(baseOrders.filter(x => x.id !== id));
+    await db.collection(FS.orders).doc(id).delete();
     audit("order_delete", `Xóa đơn hàng: ${o?.customer || id} / ${o?.spec || ""}`, id);
   }
   function handleUpdateMachine(id, status, note) {
