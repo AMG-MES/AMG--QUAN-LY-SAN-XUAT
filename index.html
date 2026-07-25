@@ -102,7 +102,7 @@
         firebase.initializeApp(_FB);
         window.__db   = firebase.firestore();
         window.__auth = firebase.auth();
-        window.__db.settings({experimentalAutoDetectLongPolling:true});
+        window.__db.settings({experimentalAutoDetectLongPolling:true, ignoreUndefinedProperties:true});
         console.log('✅ Firebase OK');
       }
     } catch(e){ console.warn('Firebase:',e.message); }
