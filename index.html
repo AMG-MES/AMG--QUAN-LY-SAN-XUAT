@@ -38,6 +38,26 @@
 
   <script>
     function setStatus(t){ var e=document.getElementById('sp-status'); if(e)e.textContent=t; }
+
+    /* Lưới an toàn: nếu có lỗi JS bất kỳ trong lúc khởi động,
+       hiện lỗi ra màn hình thay vì treo im lặng ở "Khởi động ứng dụng..." */
+    window.addEventListener('error', function(ev){
+      setStatus('❌ Lỗi: ' + (ev && ev.message ? ev.message : 'không xác định'));
+      var bar = document.querySelector('.sp-fill');
+      if (bar) bar.style.background = '#E5484D';
+    });
+    window.addEventListener('unhandledrejection', function(ev){
+      setStatus('❌ Lỗi: ' + (ev && ev.reason && ev.reason.message ? ev.reason.message : ev.reason));
+    });
+
+    /* Nếu sau 12s vẫn còn splash (app.js không mount được vì lý do gì đó
+       mà không ném lỗi bắt được), báo cho người dùng biết để họ tải lại. */
+    setTimeout(function(){
+      var sp = document.getElementById('splash');
+      if (sp && document.body.contains(sp)) {
+        setStatus('⚠️ Khởi động quá lâu — hãy thử tải lại trang (Ctrl/Cmd+Shift+R)');
+      }
+    }, 12000);
   </script>
 
   <!-- Thư viện (CDN, được SW cache lần đầu → lần sau instant) -->
@@ -53,6 +73,12 @@
   <script>
     window.XLSX = window.XLSX || {};
     window.Recharts = window.Recharts || {};
+    // Nếu CDN Firebase không tải được (mất mạng, chặn tường lửa, chạy LAN nội bộ...),
+    // vẫn cần "firebase.firestore.FieldValue.serverTimestamp()" hoạt động vì được gọi
+    // ở nhiều nơi trong app.js khi ghi dữ liệu (kể cả khi dùng bộ nhớ offline).
+    window.firebase = window.firebase || {
+      firestore: { FieldValue: { serverTimestamp: function () { return new Date().toISOString(); } } }
+    };
 
     /* ═══════════════════════════════════════════════════════
        ★  ĐIỀN FIREBASE CONFIG VÀO ĐÂY  ★

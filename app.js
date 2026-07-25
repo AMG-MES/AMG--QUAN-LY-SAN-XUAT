@@ -25,6 +25,195 @@ const {
   Tooltip,
   Legend
 } = window.Recharts || {};
+/* ═══════════════════════════════════════════════════════════════
+   ★  OFFLINE DATA LAYER — MiniFirestore shim (localStorage)  ★
+   Khi CHƯA điền Firebase config (mặc định), window.__db là null,
+   nhưng useAppData() và rất nhiều handler trong file này gọi thẳng
+   db.collection(...).doc(...).set/update/onSnapshot(...) mà không
+   kiểm tra null ⇒ app crash ngay khi mount (đúng lỗi "treo ở màn
+   khởi động" trong ảnh chụp). Thay vì sửa từng nơi gọi db.* rải rác
+   khắp file (rủi ro sót rất cao), ta giả lập một API tương thích
+   Firestore (collection/doc/onSnapshot/batch...) nhưng lưu bằng
+   localStorage, để MỌI đoạn code hiện có chạy đúng như thiết kế ban
+   đầu, kể cả khi không kết nối Firebase (đúng như comment gốc trong
+   index.html: "Bỏ trống = chạy offline với localStorage").
+═══════════════════════════════════════════════════════════════ */
+(function setupOfflineDb() {
+  if (window.__db) return; // Đã cấu hình Firebase thật → dùng Firestore, bỏ qua shim này
+  var STORAGE_KEY = "amg_mes_offline_db_v1";
+
+  function loadAll() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function saveAll(all) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); } catch (e) {
+      console.warn("Không thể ghi localStorage:", e.message);
+    }
+  }
+  function isFieldValueSentinel(v) {
+    return v && typeof v === "object" && typeof v.isEqual === "function" && !(v instanceof Date);
+  }
+  function sanitize(data) {
+    var out = {};
+    Object.keys(data || {}).forEach(function (k) {
+      var v = data[k];
+      out[k] = isFieldValueSentinel(v) ? new Date().toISOString() : v;
+    });
+    return out;
+  }
+  function genId() {
+    return "id_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+  }
+
+  var listeners = {}; // { colName: Set<fn> }
+  function notify(col) {
+    var all = loadAll();
+    var docsObj = all[col] || {};
+    (listeners[col] || []).forEach(function (fn) { fn(docsObj); });
+  }
+  function subscribe(col, fn) {
+    if (!listeners[col]) listeners[col] = [];
+    listeners[col].push(fn);
+    return function () {
+      listeners[col] = (listeners[col] || []).filter(function (f) { return f !== fn; });
+    };
+  }
+  // Đồng bộ giữa nhiều tab/thiết bị đang mở cùng trình duyệt (LAN dùng chung máy)
+  window.addEventListener("storage", function (e) {
+    if (e.key === STORAGE_KEY) Object.keys(listeners).forEach(notify);
+  });
+
+  function makeSnapshot(docsObj, opts) {
+    var entries = Object.keys(docsObj).map(function (id) { return { id: id, data: docsObj[id] }; });
+    if (opts && opts.orderBy) {
+      var field = opts.orderBy[0], dir = opts.orderBy[1];
+      entries.sort(function (a, b) {
+        var av = a.data[field], bv = b.data[field];
+        if (av == null && bv == null) return 0;
+        if (av == null) return dir === "desc" ? 1 : -1;
+        if (bv == null) return dir === "desc" ? -1 : 1;
+        if (av > bv) return dir === "desc" ? -1 : 1;
+        if (av < bv) return dir === "desc" ? 1 : -1;
+        return 0;
+      });
+    }
+    if (opts && opts.limit) entries = entries.slice(0, opts.limit);
+    return {
+      docs: entries.map(function (e) {
+        return { id: e.id, data: function () { return Object.assign({}, e.data); }, exists: true };
+      })
+    };
+  }
+
+  function docRef(col, id) {
+    return {
+      id: id,
+      col: col,
+      set: function (data, options) {
+        var all = loadAll();
+        all[col] = all[col] || {};
+        var clean = sanitize(data);
+        all[col][id] = (options && options.merge) ? Object.assign({}, all[col][id] || {}, clean) : clean;
+        saveAll(all);
+        notify(col);
+        return Promise.resolve();
+      },
+      update: function (data) {
+        var all = loadAll();
+        all[col] = all[col] || {};
+        all[col][id] = Object.assign({}, all[col][id] || {}, sanitize(data));
+        saveAll(all);
+        notify(col);
+        return Promise.resolve();
+      },
+      "delete": function () {
+        var all = loadAll();
+        if (all[col]) delete all[col][id];
+        saveAll(all);
+        notify(col);
+        return Promise.resolve();
+      },
+      get: function () {
+        var all = loadAll();
+        var d = all[col] && all[col][id];
+        return Promise.resolve({
+          exists: function () { return !!d; },
+          data: function () { return Object.assign({}, d || {}); },
+          id: id
+        });
+      }
+    };
+  }
+
+  function queryable(col, opts) {
+    return {
+      orderBy: function (field, dir) {
+        return queryable(col, Object.assign({}, opts, { orderBy: [field, dir] }));
+      },
+      limit: function (n) {
+        return queryable(col, Object.assign({}, opts, { limit: n }));
+      },
+      onSnapshot: function (onNext, onError) {
+        var push = function () {
+          try {
+            var all = loadAll();
+            onNext(makeSnapshot(all[col] || {}, opts));
+          } catch (e) { if (onError) onError(e); }
+        };
+        push();
+        return subscribe(col, push);
+      }
+    };
+  }
+
+  function collectionRef(col) {
+    var base = queryable(col, {});
+    base.doc = function (id) { return docRef(col, id || genId()); };
+    base.add = function (data) {
+      var id = genId();
+      return docRef(col, id).set(data, {}).then(function () { return { id: id }; });
+    };
+    return base;
+  }
+
+  window.__isOfflineDb = true;
+  window.__db = {
+    collection: function (col) { return collectionRef(col); },
+    batch: function () {
+      var ops = [];
+      return {
+        set: function (ref, data, options) { ops.push({ type: "set", ref: ref, data: data, options: options }); },
+        update: function (ref, data) { ops.push({ type: "update", ref: ref, data: data }); },
+        "delete": function (ref) { ops.push({ type: "delete", ref: ref }); },
+        commit: function () {
+          var touched = {};
+          var all = loadAll();
+          ops.forEach(function (op) {
+            var col = op.ref.col, id = op.ref.id;
+            all[col] = all[col] || {};
+            if (op.type === "delete") {
+              delete all[col][id];
+            } else if (op.type === "update") {
+              all[col][id] = Object.assign({}, all[col][id] || {}, sanitize(op.data));
+            } else {
+              var clean = sanitize(op.data);
+              all[col][id] = (op.options && op.options.merge) ? Object.assign({}, all[col][id] || {}, clean) : clean;
+            }
+            touched[col] = true;
+          });
+          saveAll(all);
+          Object.keys(touched).forEach(notify);
+          return Promise.resolve();
+        }
+      };
+    },
+    settings: function () {}
+  };
+})();
+
 const db = window.__db || null,
   auth = window.__auth || null;
 const FS = {
@@ -2380,6 +2569,27 @@ function todayMinus(days) {
   d.setDate(d.getDate() - days);
   return d.toISOString().slice(0, 10);
 }
+/* ===================== FIREBASE RTDB URL (đồng bộ đa thiết bị qua REST, tuỳ chọn) ===================== */
+// Lưu ý: đây là cơ chế đồng bộ REST đơn giản (Realtime Database), tách biệt với
+// lớp Firestore (db) dùng cho toàn bộ CRUD của app — chỉ dùng để AdminPage lưu lại
+// URL RTDB người dùng nhập vào Cài đặt đồng bộ.
+const FIREBASE_URL_KEY = "mes_firebase_rtdb_url";
+function getFirebaseUrl() {
+  try {
+    return localStorage.getItem(FIREBASE_URL_KEY) || "";
+  } catch (e) {
+    return "";
+  }
+}
+function setFirebaseUrl(url) {
+  try {
+    if (url) localStorage.setItem(FIREBASE_URL_KEY, url);
+    else localStorage.removeItem(FIREBASE_URL_KEY);
+  } catch (e) {
+    console.warn("Không thể lưu Firebase URL:", e.message);
+  }
+}
+
 function genMachineSeed() {
   const list = [];
   MACHINE_TYPES.forEach(type => {
@@ -2656,6 +2866,32 @@ function useAppData() {
   const [auditLog, setAuditLog] = React.useState([]);
   const [attendance, setAttendance] = React.useState({});
   const [storageError] = React.useState(false);
+  // Lần chạy offline đầu tiên (localStorage trống) → gieo dữ liệu mẫu gốc,
+  // để app không hiện trống trơn khi chưa cấu hình Firebase.
+  const seedIfEmptyOffline = React.useCallback(async () => {
+    if (!window.__isOfflineDb) return;
+    // Kiểm tra một lần xem collection có trống không (an toàn nếu onSnapshot gọi callback đồng bộ)
+    const isEmpty = col => new Promise(resolve => {
+      let unsub, done = false;
+      unsub = db.collection(col).onSnapshot(s => {
+        if (done) return;
+        done = true;
+        resolve(s.docs.length === 0);
+        if (unsub) unsub(); else Promise.resolve().then(() => unsub && unsub());
+      }, () => resolve(true));
+    });
+    const batch = db.batch();
+    let touched = false;
+    if (await isEmpty(FS.orders)) { SEED_ORDERS.forEach(o => { batch.set(db.collection(FS.orders).doc(o.id), o); touched = true; }); }
+    if (await isEmpty(FS.machines)) { genMachineSeed().forEach(m => { batch.set(db.collection(FS.machines).doc(m.id), m); touched = true; }); }
+    if (await isEmpty(FS.staff)) { SEED_STAFF.forEach(s => { batch.set(db.collection(FS.staff).doc(s.id), s); touched = true; }); }
+    if (await isEmpty(FS.scrap)) { SEED_SCRAP.forEach(s => { batch.set(db.collection(FS.scrap).doc(s.id), s); touched = true; }); }
+    if (await isEmpty(FS.users)) {
+      DEFAULT_USERS_PLAIN.forEach(u => { batch.set(db.collection(FS.users).doc(u.username), u); touched = true; });
+    }
+    if (touched) await batch.commit();
+  }, []);
+
   React.useEffect(() => {
     let n = 0;
     const total = 7;
@@ -2663,7 +2899,11 @@ function useAppData() {
       n++;
       if (n >= total) setReady(true);
     };
-    const unsubs = [db.collection(FS.orders).orderBy("createdAt", "desc").onSnapshot(s => {
+    let cancelled = false;
+    let unsubs = [];
+    seedIfEmptyOffline().finally(() => {
+      if (cancelled) return;
+      unsubs = [db.collection(FS.orders).orderBy("createdAt", "desc").onSnapshot(s => {
       setOrders(s.docs.map(d => ({
         id: d.id,
         ...d.data()
@@ -2708,7 +2948,8 @@ function useAppData() {
       setAttendance(a);
       done();
     }, () => done())];
-    return () => unsubs.forEach(u => u());
+    });
+    return () => { cancelled = true; unsubs.forEach(u => u()); };
   }, []);
 
   // persist* = batch-write arrays → Firestore (giữ API compat với toàn bộ handlers)
@@ -9524,14 +9765,21 @@ function AppInner() {
     audit("user_update", `Xóa tài khoản: ${username}`, username);
   }
   async function handleResetSeedData() {
-    /* no-op: no seed data */
-    {
-      const batch = db.batch();
-      genMachineSeed().forEach(m => batch.set(db.collection(FS.machines).doc(m.id), m));
-      await batch.commit();
-    }
-    /* no-op: no seed data */
-    await /* no-op: no seed data */
+    const batch = db.batch();
+    // Máy móc: genMachineSeed() luôn sinh đủ bộ ID theo MACHINE_TYPES nên set đè là đủ
+    genMachineSeed().forEach(m => batch.set(db.collection(FS.machines).doc(m.id), m));
+    // Đơn hàng / Nhân sự / Phế liệu: xoá các bản ghi phát sinh thêm (không có trong dữ liệu mẫu),
+    // rồi set lại toàn bộ dữ liệu mẫu gốc
+    const seedOrderIds = new Set(SEED_ORDERS.map(o => o.id));
+    (data.orders || []).forEach(o => { if (!seedOrderIds.has(o.id)) batch.delete(db.collection(FS.orders).doc(o.id)); });
+    SEED_ORDERS.forEach(o => batch.set(db.collection(FS.orders).doc(o.id), o));
+    const seedStaffIds = new Set(SEED_STAFF.map(s => s.id));
+    (data.staff || []).forEach(s => { if (!seedStaffIds.has(s.id)) batch.delete(db.collection(FS.staff).doc(s.id)); });
+    SEED_STAFF.forEach(s => batch.set(db.collection(FS.staff).doc(s.id), s));
+    const seedScrapIds = new Set(SEED_SCRAP.map(s => s.id));
+    (data.scrap || []).forEach(s => { if (!seedScrapIds.has(s.id)) batch.delete(db.collection(FS.scrap).doc(s.id)); });
+    SEED_SCRAP.forEach(s => batch.set(db.collection(FS.scrap).doc(s.id), s));
+    await batch.commit();
     audit("user_update", "Khôi phục toàn bộ dữ liệu mẫu gốc (đơn hàng, máy móc, nhân sự, phế liệu)");
   }
   const pageTitles = {
@@ -9631,6 +9879,329 @@ function AppInner() {
     onResetSeedData: handleResetSeedData
   })))));
 }
-export default function App() {
+/* ═══════════════════════════════════════════════════════════════
+   ★  UI KIT DÙNG CHUNG (bị thiếu trong bản build gốc)  ★
+   Các component dưới đây được gọi ở khắp file (Button, Modal, Badge,
+   Field, IconButton, ProgressBar, SectionHeading, EmptyState,
+   GlobalStyle, DialogProvider/useDialog) nhưng chưa từng được định
+   nghĩa ⇒ ứng dụng crash ngay khi render (ReferenceError). Khôi phục
+   lại đầy đủ, đồng bộ theo COLORS / FONT_* / className "mes-*" đã
+   dùng sẵn trong phần còn lại của file.
+═══════════════════════════════════════════════════════════════ */
+
+/* ---------- GlobalStyle: font + class "mes-*" dùng khắp app ---------- */
+function GlobalStyle() {
+  return /*#__PURE__*/React.createElement("style", null, `
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+    .mes-root{font-family:${FONT_BODY};}
+    .mes-display{font-family:${FONT_DISPLAY};}
+    .mes-mono{font-family:${FONT_MONO};}
+    .mes-card{background:${COLORS.bgPanel};border:1px solid ${COLORS.border};border-radius:14px;}
+    .mes-fade-in{animation:mesFadeIn .25s ease;}
+    @keyframes mesFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    .mes-input{width:100%;background:${COLORS.bgInset};border:1px solid ${COLORS.border};border-radius:8px;color:${COLORS.text};padding:9px 11px;font-size:13.5px;outline:none;font-family:inherit;}
+    .mes-input:focus{border-color:${COLORS.copper};}
+    .mes-btn{transition:filter .15s ease,opacity .15s ease;}
+    .mes-btn:hover{filter:brightness(1.08);}
+    .mes-btn-ghost:hover{background:${COLORS.bgPanel2};}
+    .mes-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .mes-table th{text-align:left;padding:9px 10px;color:${COLORS.textFaint};font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid ${COLORS.border};}
+    .mes-table td{padding:10px;border-bottom:1px solid ${COLORS.border};}
+    .mes-scroll-x{overflow-x:auto;}
+    .mes-flow-line{color:${COLORS.textFaint};font-size:12.5px;}
+    ::-webkit-scrollbar{width:9px;height:9px;}
+    ::-webkit-scrollbar-thumb{background:${COLORS.border};border-radius:6px;}
+    .pulse-dot{animation:mesPulse 1.4s ease-in-out infinite;}
+    @keyframes mesPulse{0%,100%{opacity:1}50%{opacity:.35}}
+  `);
+}
+
+/* ---------- Button ---------- */
+function Button({
+  variant,
+  size,
+  disabled,
+  onClick,
+  children,
+  style,
+  type = "button",
+  ...rest
+}) {
+  const base = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    padding: size === "sm" ? "6px 10px" : "9px 16px",
+    fontSize: size === "sm" ? 12.5 : 13.5,
+    fontWeight: 600,
+    borderRadius: 8,
+    cursor: disabled ? "not-allowed" : "pointer",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.bgPanel2,
+    color: COLORS.text,
+    opacity: disabled ? 0.55 : 1,
+    whiteSpace: "nowrap"
+  };
+  const variants = {
+    primary: {
+      background: `linear-gradient(135deg, ${COLORS.copper}, ${COLORS.copperBright})`,
+      border: "1px solid transparent",
+      color: "#1a1006"
+    },
+    danger: {
+      background: COLORS.redDim,
+      border: `1px solid ${COLORS.red}55`,
+      color: COLORS.red
+    },
+    ghost: {
+      background: "transparent",
+      border: "1px solid transparent",
+      color: COLORS.textDim
+    }
+  };
+  const cls = "mes-btn" + (variant === "ghost" ? " mes-btn-ghost" : "");
+  return /*#__PURE__*/React.createElement("button", {
+    type,
+    className: cls,
+    disabled,
+    onClick: disabled ? undefined : onClick,
+    style: { ...base, ...(variants[variant] || {}), ...style },
+    ...rest
+  }, children);
+}
+
+/* ---------- IconButton ---------- */
+function IconButton({ icon: Icon, onClick, title, danger, style, disabled }) {
+  return /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    title,
+    disabled,
+    onClick,
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: 30,
+      height: 30,
+      borderRadius: 7,
+      border: `1px solid ${COLORS.border}`,
+      background: COLORS.bgPanel2,
+      color: danger ? COLORS.red : COLORS.textDim,
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.5 : 1,
+      flexShrink: 0,
+      ...style
+    }
+  }, Icon && /*#__PURE__*/React.createElement(Icon, { size: 14 }));
+}
+
+/* ---------- Modal ---------- */
+function Modal({ title, onClose, width = 520, children }) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(3,5,8,.6)",
+      backdropFilter: "blur(2px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2000,
+      padding: 16
+    },
+    onClick: e => { if (e.target === e.currentTarget && onClose) onClose(); }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-card mes-fade-in",
+    style: {
+      width: "100%",
+      maxWidth: width,
+      maxHeight: "88vh",
+      overflowY: "auto",
+      padding: 24,
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      marginBottom: 18,
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-display",
+    style: { fontSize: 17, fontWeight: 700, color: COLORS.text }
+  }, title), onClose && /*#__PURE__*/React.createElement(IconButton, {
+    icon: X,
+    onClick: onClose,
+    title: "Đóng"
+  })), children));
+}
+
+/* ---------- Badge ---------- */
+function Badge({ color = COLORS.textDim, children }) {
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4,
+      padding: "2px 9px",
+      borderRadius: 999,
+      fontSize: 11.5,
+      fontWeight: 700,
+      background: color + "22",
+      color,
+      border: `1px solid ${color}55`,
+      whiteSpace: "nowrap"
+    }
+  }, children);
+}
+
+/* ---------- Field ---------- */
+function Field({ label, children }) {
+  return /*#__PURE__*/React.createElement("label", {
+    style: { display: "block", marginBottom: 14 }
+  }, label && /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 12, fontWeight: 600, color: COLORS.textDim, marginBottom: 6 }
+  }, label), children);
+}
+
+/* ---------- ProgressBar ---------- */
+function ProgressBar({ pct, color }) {
+  const p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
+  const barColor = color || (p >= 100 ? COLORS.green : p >= 60 ? COLORS.copper : COLORS.amber);
+  return /*#__PURE__*/React.createElement("div", {
+    style: { width: "100%", height: 6, background: COLORS.bgInset, borderRadius: 4, overflow: "hidden" }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { width: p + "%", height: "100%", background: barColor, borderRadius: 4, transition: "width .3s ease" }
+  }));
+}
+
+/* ---------- SectionHeading ---------- */
+function SectionHeading({ eyebrow, title, subtitle, action }) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      gap: 16,
+      marginBottom: 18,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, eyebrow && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 700,
+      letterSpacing: ".04em",
+      textTransform: "uppercase",
+      color: COLORS.copper,
+      marginBottom: 4
+    }
+  }, eyebrow), /*#__PURE__*/React.createElement("div", {
+    className: "mes-display",
+    style: { fontSize: 20, fontWeight: 800, color: COLORS.text }
+  }, title), subtitle && /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 12.5, color: COLORS.textDim, marginTop: 4 }
+  }, subtitle)), action && /*#__PURE__*/React.createElement("div", null, action));
+}
+
+/* ---------- EmptyState ---------- */
+function EmptyState({ icon: Icon, title, hint, action }) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "48px 20px",
+      textAlign: "center",
+      color: COLORS.textDim
+    }
+  }, Icon && /*#__PURE__*/React.createElement(Icon, { size: 30, style: { marginBottom: 12, opacity: .6 } }),
+    /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: hint || action ? 6 : 0 }
+    }, title),
+    hint && /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 12.5, maxWidth: 340, marginBottom: action ? 14 : 0 }
+    }, hint),
+    action);
+}
+
+/* ---------- DialogProvider / useDialog (askConfirm / showAlert) ---------- */
+const DialogContext = /*#__PURE__*/createContext(null);
+function useDialog() {
+  return useContext(DialogContext);
+}
+function DialogProvider({ children }) {
+  const [state, setState] = useState(null); // { type:'confirm'|'alert', message, opts, resolve }
+
+  const askConfirm = useCallback((message, opts = {}) => new Promise(resolve => {
+    setState({ type: "confirm", message, opts, resolve });
+  }), []);
+
+  const showAlert = useCallback((message, opts = {}) => new Promise(resolve => {
+    setState({ type: "alert", message, opts, resolve });
+  }), []);
+
+  const close = result => {
+    setState(s => {
+      if (s && s.resolve) s.resolve(result);
+      return null;
+    });
+  };
+
+  return /*#__PURE__*/React.createElement(DialogContext.Provider, {
+    value: { askConfirm, showAlert }
+  }, children, state && /*#__PURE__*/React.createElement(Modal, {
+    title: state.opts.title || (state.type === "confirm" ? "Xác nhận" : "Thông báo"),
+    onClose: () => close(state.type === "confirm" ? false : undefined),
+    width: 420
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 13.5, color: COLORS.text, lineHeight: 1.6, marginBottom: 20, whiteSpace: "pre-wrap" }
+  }, state.message), /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", gap: 10, justifyContent: "flex-end" }
+  }, state.type === "confirm" && /*#__PURE__*/React.createElement(Button, {
+    onClick: () => close(false)
+  }, state.opts.cancelLabel || "Hủy"), /*#__PURE__*/React.createElement(Button, {
+    variant: state.opts.danger ? "danger" : "primary",
+    onClick: () => close(state.type === "confirm" ? true : undefined)
+  }, state.type === "confirm" ? (state.opts.confirmLabel || "Xác nhận") : (state.opts.okLabel || "Đã hiểu")))));
+}
+
+function App() {
   return /*#__PURE__*/React.createElement(DialogProvider, null, /*#__PURE__*/React.createElement(AppInner, null));
 }
+
+/* ═══════════════════════════════════════════════════════
+   ★  MOUNT ỨNG DỤNG VÀO #root  ★
+   (Trước đây thiếu đoạn này ⇒ App không bao giờ được render,
+   và màn splash "Khởi động ứng dụng..." bị treo vĩnh viễn.)
+═══════════════════════════════════════════════════════ */
+(function mountApp() {
+  function hideSplash() {
+    var sp = document.getElementById('splash');
+    if (!sp) return;
+    sp.style.opacity = '0';
+    setTimeout(function () { sp.remove(); }, 350);
+  }
+  function showFatalError(err) {
+    console.error('Lỗi khởi động ứng dụng:', err);
+    var st = document.getElementById('sp-status');
+    if (st) st.textContent = '❌ Lỗi khởi động: ' + (err && err.message ? err.message : err);
+    var bar = document.querySelector('.sp-fill');
+    if (bar) bar.style.background = '#E5484D';
+  }
+  try {
+    if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+      throw new Error('Chưa tải được React/ReactDOM (kiểm tra kết nối mạng lần đầu)');
+    }
+    var container = document.getElementById('root');
+    if (!container) throw new Error('Không tìm thấy phần tử #root trong index.html');
+    var root = ReactDOM.createRoot(container);
+    root.render(/*#__PURE__*/React.createElement(App));
+    hideSplash();
+  } catch (err) {
+    showFatalError(err);
+  }
+})();
