@@ -4577,11 +4577,16 @@ function OrdersPage({
   onAdd,
   onUpdate,
   onDelete,
+  onBulkDelete,
   onRestoreSeed
 }) {
+  const {
+    askConfirm
+  } = useDialog();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalState, setModalState] = useState(null); // { mode, order }
+  const [selected, setSelected] = useState(() => new Set());
 
   const filtered = useMemo(() => {
     return orders.filter(o => {
@@ -4597,6 +4602,37 @@ function OrdersPage({
       return true;
     });
   }, [orders, search, statusFilter]);
+  // Bỏ chọn những đơn không còn hiển thị (đã bị lọc mất / đã bị xoá)
+  React.useEffect(() => {
+    const visibleIds = new Set(filtered.map(o => o.id));
+    setSelected(prev => {
+      const next = new Set([...prev].filter(id => visibleIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [filtered]);
+  const allSelected = filtered.length > 0 && filtered.every(o => selected.has(o.id));
+  const toggleSelectAll = () => {
+    setSelected(allSelected ? new Set() : new Set(filtered.map(o => o.id)));
+  };
+  const toggleOne = (id, e) => {
+    e.stopPropagation();
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  async function handleBulkDeleteClick() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (await askConfirm(`Xóa ${ids.length} đơn hàng đã chọn? Hành động không thể hoàn tác.`, {
+      danger: true,
+      confirmLabel: `Xóa ${ids.length} đơn hàng`
+    })) {
+      await onBulkDelete(ids);
+      setSelected(new Set());
+    }
+  }
   function handleSave(form, isNew) {
     const cleanedForm = normalizeOrderStages({
       ...form,
@@ -4670,7 +4706,39 @@ function OrdersPage({
     value: "done"
   }, "Hoàn thành"), /*#__PURE__*/React.createElement("option", {
     value: "notstarted"
-  }, "Chưa bắt đầu"))), /*#__PURE__*/React.createElement("div", {
+  }, "Chưa bắt đầu"))), isAdmin && selected.size > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 10,
+      padding: "10px 14px",
+      marginBottom: 12,
+      borderRadius: 10,
+      background: `${COLORS.red}15`,
+      border: `1px solid ${COLORS.red}40`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: COLORS.text
+    }
+  }, "Đã chọn ", selected.size, " đơn hàng"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    size: "sm",
+    onClick: () => setSelected(new Set())
+  }, "Bỏ chọn"), /*#__PURE__*/React.createElement(Button, {
+    size: "sm",
+    variant: "danger",
+    onClick: handleBulkDeleteClick
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    size: 14
+  }), " Xóa đã chọn"))), /*#__PURE__*/React.createElement("div", {
     className: "mes-card mes-scroll-x"
   }, filtered.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     title: orders.length === 0 ? "Chưa có dữ liệu đơn hàng" : "Không tìm thấy đơn hàng phù hợp",
@@ -4683,7 +4751,16 @@ function OrdersPage({
     }), " Khôi phục 37 đơn hàng mẫu")
   }) : /*#__PURE__*/React.createElement("table", {
     className: "mes-table"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Khách hàng"), /*#__PURE__*/React.createElement("th", null, "Quy cách"), /*#__PURE__*/React.createElement("th", null, "Mã liệu"), /*#__PURE__*/React.createElement("th", null, "Số lượng"), /*#__PURE__*/React.createElement("th", null, "Còn lại"), /*#__PURE__*/React.createElement("th", null, "Tiến trình công đoạn"), /*#__PURE__*/React.createElement("th", null, "Tiến độ"), /*#__PURE__*/React.createElement("th", null, "Trạng thái"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, filtered.map(o => {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, isAdmin && /*#__PURE__*/React.createElement("th", {
+    style: {
+      width: 34
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: allSelected,
+    onChange: toggleSelectAll,
+    title: "Chọn tất cả"
+  })), /*#__PURE__*/React.createElement("th", null, "Khách hàng"), /*#__PURE__*/React.createElement("th", null, "Quy cách"), /*#__PURE__*/React.createElement("th", null, "Mã liệu"), /*#__PURE__*/React.createElement("th", null, "Số lượng"), /*#__PURE__*/React.createElement("th", null, "Còn lại"), /*#__PURE__*/React.createElement("th", null, "Tiến trình công đoạn"), /*#__PURE__*/React.createElement("th", null, "Tiến độ"), /*#__PURE__*/React.createElement("th", null, "Trạng thái"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, filtered.map(o => {
     const prog = orderProgress(o);
     return /*#__PURE__*/React.createElement("tr", {
       key: o.id,
@@ -4694,7 +4771,13 @@ function OrdersPage({
         mode: "view",
         order: o
       })
-    }, /*#__PURE__*/React.createElement("td", {
+    }, isAdmin && /*#__PURE__*/React.createElement("td", {
+      onClick: e => e.stopPropagation()
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      checked: selected.has(o.id),
+      onChange: e => toggleOne(o.id, e)
+    })), /*#__PURE__*/React.createElement("td", {
       style: {
         fontWeight: 600
       }
@@ -4751,10 +4834,23 @@ function MachineStatusModal({
   machine,
   isAdmin,
   onClose,
-  onSave
+  onSave,
+  onDelete
 }) {
+  const {
+    askConfirm
+  } = useDialog();
   const [status, setStatus] = useState(machine.status);
   const [note, setNote] = useState(machine.note || "");
+  async function handleDelete() {
+    if (await askConfirm(`Xóa máy ${machine.id} (${machine.typeLabel})? Hành động không thể hoàn tác.`, {
+      danger: true,
+      confirmLabel: "Xóa máy"
+    })) {
+      await onDelete(machine.id);
+      onClose();
+    }
+  }
   return /*#__PURE__*/React.createElement(Modal, {
     title: `Máy ${machine.id} · ${machine.typeLabel}`,
     onClose: onClose,
@@ -4792,25 +4888,36 @@ function MachineStatusModal({
       color: COLORS.textFaint,
       marginBottom: 14
     }
-  }, "Cập nhật lần cuối: ", fmtDateTime(machine.updatedAt), " bởi ", machine.updatedBy), isAdmin && /*#__PURE__*/React.createElement(Button, {
+  }, "Cập nhật lần cuối: ", fmtDateTime(machine.updatedAt), " bởi ", machine.updatedBy), isAdmin && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "danger",
+    onClick: handleDelete
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    size: 14
+  }), " Xóa máy"), /*#__PURE__*/React.createElement(Button, {
     variant: "primary",
     onClick: () => {
       onSave(machine.id, status, note);
       onClose();
     },
     style: {
-      width: "100%",
+      flex: 1,
       justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement(Save, {
     size: 14
-  }), " Lưu trạng thái"));
+  }), " Lưu trạng thái")));
 }
 function MachineGroup({
   type,
   machines,
   isAdmin,
-  onSelect
+  onSelect,
+  onAddMachine
 }) {
   const [open, setOpen] = useState(false);
   const counts = {
@@ -4912,12 +5019,40 @@ function MachineGroup({
         color: COLORS.text
       }
     }, m.id));
-  })));
+  }), isAdmin && /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      onAddMachine(type.key);
+    },
+    title: `Thêm máy ${type.label}`,
+    style: {
+      border: `1px dashed ${COLORS.border}`,
+      background: "transparent",
+      borderRadius: 8,
+      padding: "8px 4px",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      color: COLORS.textFaint,
+      minHeight: 56
+    }
+  }, /*#__PURE__*/React.createElement(Plus, {
+    size: 14
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10
+    }
+  }, "Thêm máy"))));
 }
 function MachinesPage({
   machines,
   isAdmin,
   onUpdateMachine,
+  onAddMachine,
+  onDeleteMachine,
   onRestoreSeed
 }) {
   const [selected, setSelected] = useState(null);
@@ -4985,12 +5120,14 @@ function MachinesPage({
     type: g.type,
     machines: g.machines,
     isAdmin: isAdmin,
-    onSelect: setSelected
+    onSelect: setSelected,
+    onAddMachine: onAddMachine
   })), selected && /*#__PURE__*/React.createElement(MachineStatusModal, {
     machine: selected,
     isAdmin: isAdmin,
     onClose: () => setSelected(null),
-    onSave: (id, status, note) => onUpdateMachine(id, status, note)
+    onSave: (id, status, note) => onUpdateMachine(id, status, note),
+    onDelete: onDeleteMachine
   }));
 }
 
@@ -9778,6 +9915,15 @@ function AppInner() {
     await db.collection(FS.orders).doc(id).delete();
     audit("order_delete", `Xóa đơn hàng: ${o?.customer || id} / ${o?.spec || ""}`, id);
   }
+  async function handleBulkDeleteOrders(ids) {
+    if (!ids || ids.length === 0) return;
+    const removed = baseOrders.filter(o => ids.includes(o.id));
+    const batch = db.batch();
+    ids.forEach(id => batch.delete(db.collection(FS.orders).doc(id)));
+    await batch.commit();
+    const preview = removed.slice(0, 5).map(o => `${o.customer || o.id}/${o.spec || ""}`).join(", ");
+    audit("order_delete", `Xóa ${ids.length} đơn hàng cùng lúc: ${preview}${removed.length > 5 ? "…" : ""}`);
+  }
   function handleUpdateMachine(id, status, note) {
     db.collection(FS.machines).doc(id).update({
       status,
@@ -9786,6 +9932,32 @@ function AppInner() {
       updatedBy: currentUser.fullName
     }).catch(() => {});
     audit("machine_update", `Cập nhật máy ${id}: trạng thái → ${MACHINE_STATUS[status].label}`, id);
+  }
+  function handleAddMachine(typeKey) {
+    const type = MACHINE_TYPES.find(t => t.key === typeKey);
+    if (!type) return;
+    // Tự sinh số thứ tự tiếp theo dựa trên các máy cùng loại đã có (vd KTI-64 -> KTI-65)
+    const existingNums = data.machines.filter(m => m.typeKey === typeKey).map(m => {
+      const match = String(m.id).match(/-(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+    const nextNum = (existingNums.length ? Math.max(...existingNums) : 0) + 1;
+    const id = `${type.prefix}-${String(nextNum).padStart(2, "0")}`;
+    db.collection(FS.machines).doc(id).set({
+      id,
+      typeKey: type.key,
+      typeLabel: type.label,
+      stage: type.stage,
+      status: "idle",
+      note: "",
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: currentUser.fullName
+    });
+    audit("machine_add", `Thêm máy mới: ${id} (${type.label})`, id);
+  }
+  async function handleDeleteMachine(id) {
+    await db.collection(FS.machines).doc(id).delete();
+    audit("machine_delete", `Xóa máy: ${id}`, id);
   }
   async function handleAddScrap(rec) {
     // onSnapshot keeps data.scrap fresh
@@ -9970,11 +10142,14 @@ function AppInner() {
     onAdd: handleAddOrder,
     onUpdate: handleUpdateOrder,
     onDelete: handleDeleteOrder,
+    onBulkDelete: handleBulkDeleteOrders,
     onRestoreSeed: handleResetSeedData
   }), activeTab === "machines" && /*#__PURE__*/React.createElement(MachinesPage, {
     machines: data.machines,
     isAdmin: isAdmin,
     onUpdateMachine: handleUpdateMachine,
+    onAddMachine: handleAddMachine,
+    onDeleteMachine: handleDeleteMachine,
     onRestoreSeed: handleResetSeedData
   }), activeTab === "qc" && /*#__PURE__*/React.createElement(QCPage, {
     scrap: data.scrap,
