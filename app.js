@@ -312,6 +312,7 @@ const Factory = _ic('🏭'),
   Lock = _ic('🔒'),
   UserIcon = _ic('👤'),
   X = _ic('✕'),
+  Menu = _ic('☰'),
   Save = _ic('💾'),
   TrendingUp = _ic('📈'),
   PackageSearch = _ic('🔍'),
@@ -3355,9 +3356,12 @@ function Sidebar({
   onChange,
   role,
   collapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  mobileOpen,
+  onCloseMobile
 }) {
   return /*#__PURE__*/React.createElement("div", {
+    className: "mes-sidebar" + (mobileOpen ? " mes-sidebar--open" : ""),
     style: {
       width: collapsed ? 64 : 232,
       flexShrink: 0,
@@ -3395,7 +3399,8 @@ function Sidebar({
     color: "#1A0F08"
   })), !collapsed && /*#__PURE__*/React.createElement("div", {
     style: {
-      overflow: "hidden"
+      overflow: "hidden",
+      flex: 1
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
@@ -3409,7 +3414,21 @@ function Sidebar({
       fontSize: 10.5,
       color: COLORS.textFaint
     }
-  }, "MES Production"))), /*#__PURE__*/React.createElement("nav", {
+  }, "MES Production")), /*#__PURE__*/React.createElement("button", {
+    onClick: onCloseMobile,
+    className: "mes-sidebar-close",
+    "aria-label": "Đóng menu",
+    style: {
+      border: "none",
+      background: "transparent",
+      color: COLORS.textDim,
+      cursor: "pointer",
+      padding: 4,
+      display: "none"
+    }
+  }, /*#__PURE__*/React.createElement(X, {
+    size: 20
+  }))), /*#__PURE__*/React.createElement("nav", {
     style: {
       flex: 1,
       padding: "12px 10px",
@@ -3452,7 +3471,7 @@ function Sidebar({
     }, item.label));
   })), /*#__PURE__*/React.createElement("button", {
     onClick: onToggleCollapse,
-    className: "mes-btn mes-btn-ghost",
+    className: "mes-btn mes-btn-ghost mes-sidebar-collapse-btn",
     style: {
       margin: 10,
       justifyContent: "center"
@@ -3470,9 +3489,11 @@ function TopBar({
   currentUser,
   onLogout,
   pageTitle,
-  onRefresh
+  onRefresh,
+  onOpenMobileNav
 }) {
   return /*#__PURE__*/React.createElement("div", {
+    className: "mes-topbar",
     style: {
       height: 60,
       borderBottom: `1px solid ${COLORS.border}`,
@@ -3484,20 +3505,42 @@ function TopBar({
       top: 0,
       background: "rgba(14,17,22,0.85)",
       backdropFilter: "blur(6px)",
-      zIndex: 50
+      zIndex: 50,
+      gap: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onOpenMobileNav,
+    className: "mes-btn mes-btn-ghost mes-hamburger-btn",
+    "aria-label": "Mở menu",
+    style: {
+      padding: 8,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(Menu, {
+    size: 18
+  })), /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
     style: {
       fontSize: 15,
       fontWeight: 600,
-      color: COLORS.text
+      color: COLORS.text,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap"
     }
-  }, pageTitle), /*#__PURE__*/React.createElement("div", {
+  }, pageTitle)), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 14
+      gap: 14,
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onRefresh,
@@ -3509,12 +3552,14 @@ function TopBar({
   }, /*#__PURE__*/React.createElement(RefreshCw, {
     size: 15
   })), /*#__PURE__*/React.createElement("div", {
+    className: "mes-topbar-divider",
     style: {
       width: 1,
       height: 22,
       background: COLORS.border
     }
   }), /*#__PURE__*/React.createElement("div", {
+    className: "mes-topbar-user",
     style: {
       textAlign: "right"
     }
@@ -3539,7 +3584,8 @@ function TopBar({
       justifyContent: "center",
       fontSize: 12,
       fontWeight: 700,
-      color: "#0B0E13"
+      color: "#0B0E13",
+      flexShrink: 0
     }
   }, currentUser.fullName?.slice(0, 1)?.toUpperCase()), /*#__PURE__*/React.createElement(IconButton, {
     icon: LogOut,
@@ -9685,6 +9731,7 @@ function AppInner() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   useEffect(() => {
     if (!data.ready || !currentUser) return;
     const t = setInterval(() => {
@@ -10121,15 +10168,24 @@ function AppInner() {
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-root"
   }, /*#__PURE__*/React.createElement(GlobalStyle, null), /*#__PURE__*/React.createElement("div", {
+    className: "mes-app-shell",
     style: {
       display: "flex"
     }
-  }, /*#__PURE__*/React.createElement(Sidebar, {
+  }, mobileNavOpen && /*#__PURE__*/React.createElement("div", {
+    className: "mes-sidebar-overlay",
+    onClick: () => setMobileNavOpen(false)
+  }), /*#__PURE__*/React.createElement(Sidebar, {
     active: activeTab,
-    onChange: setActiveTab,
+    onChange: key => {
+      setActiveTab(key);
+      setMobileNavOpen(false);
+    },
     role: currentUser.role,
     collapsed: collapsed,
-    onToggleCollapse: () => setCollapsed(c => !c)
+    onToggleCollapse: () => setCollapsed(c => !c),
+    mobileOpen: mobileNavOpen,
+    onCloseMobile: () => setMobileNavOpen(false)
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
@@ -10139,8 +10195,10 @@ function AppInner() {
     currentUser: currentUser,
     onLogout: () => setCurrentUser(null),
     pageTitle: pageTitles[activeTab],
-    onRefresh: data.refreshAll
+    onRefresh: data.refreshAll,
+    onOpenMobileNav: () => setMobileNavOpen(true)
   }), /*#__PURE__*/React.createElement("div", {
+    className: "mes-content-wrap",
     style: {
       padding: 22,
       maxWidth: 1320,
@@ -10246,6 +10304,56 @@ function GlobalStyle() {
     ::-webkit-scrollbar-thumb{background:${COLORS.border};border-radius:6px;}
     .pulse-dot{animation:mesPulse 1.4s ease-in-out infinite;}
     @keyframes mesPulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+    /* ═══════════════ RESPONSIVE / MOBILE (≤860px) ═══════════════ */
+    .mes-hamburger-btn{display:none;}
+    .mes-sidebar-close{display:none;}
+    .mes-sidebar-overlay{display:none;}
+
+    @media (max-width: 860px){
+      /* Sidebar trở thành ngăn kéo (drawer) trượt từ trái, ẩn theo mặc định */
+      .mes-sidebar{
+        position:fixed !important;
+        left:0; top:0;
+        width:260px !important;
+        max-width:82vw;
+        height:100vh;
+        z-index:300;
+        transform:translateX(-100%);
+        transition:transform .22s ease;
+        box-shadow:2px 0 24px rgba(0,0,0,.5);
+      }
+      .mes-sidebar--open{ transform:translateX(0); }
+      .mes-sidebar span, .mes-sidebar .mes-display{ white-space:nowrap !important; overflow:visible !important; }
+      .mes-sidebar-close{ display:block !important; }
+      .mes-sidebar-collapse-btn{ display:none !important; }
+
+      .mes-sidebar-overlay{
+        display:block;
+        position:fixed; inset:0;
+        background:rgba(3,5,8,.6);
+        z-index:290;
+        animation:mesFadeIn .18s ease;
+      }
+
+      .mes-hamburger-btn{ display:flex !important; }
+
+      .mes-content-wrap{ padding:12px !important; }
+      .mes-topbar{ padding:0 12px !important; }
+      .mes-topbar-user{ display:none; }
+      .mes-topbar-divider{ display:none; }
+
+      .mes-card{ border-radius:12px; }
+      .mes-table{ font-size:12px; }
+      .mes-table th, .mes-table td{ padding:8px 7px; }
+
+      /* Modal: gần full màn hình trên di động thay vì kích thước cố định desktop */
+      .mes-mobile-modal-backdrop{ padding:8px !important; align-items:flex-end !important; }
+      .mes-mobile-modal-backdrop > div{ max-height:94vh !important; border-radius:16px 16px 0 0 !important; }
+    }
+    @media (min-width: 861px){
+      .mes-sidebar-close{ display:none !important; }
+    }
   `);
 }
 
@@ -10332,6 +10440,7 @@ function IconButton({ icon: Icon, onClick, title, danger, style, disabled }) {
 /* ---------- Modal ---------- */
 function Modal({ title, onClose, width = 520, children }) {
   return /*#__PURE__*/React.createElement("div", {
+    className: "mes-mobile-modal-backdrop",
     style: {
       position: "fixed",
       inset: 0,
