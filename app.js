@@ -4825,7 +4825,7 @@ function OrdersPage({
     checked: allSelected,
     onChange: toggleSelectAll,
     title: "Chọn tất cả"
-  })), /*#__PURE__*/React.createElement("th", null, "Khách hàng"), /*#__PURE__*/React.createElement("th", null, "Quy cách"), /*#__PURE__*/React.createElement("th", null, "Mã liệu"), /*#__PURE__*/React.createElement("th", null, "Số lượng"), /*#__PURE__*/React.createElement("th", null, "Còn lại"), /*#__PURE__*/React.createElement("th", null, "Tiến trình công đoạn"), /*#__PURE__*/React.createElement("th", null, "Tiến độ"), /*#__PURE__*/React.createElement("th", null, "Trạng thái"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, filtered.map(o => {
+  })), /*#__PURE__*/React.createElement("th", null, "Khách hàng"), /*#__PURE__*/React.createElement("th", null, "Ngày xuống đơn"), /*#__PURE__*/React.createElement("th", null, "Quy cách"), /*#__PURE__*/React.createElement("th", null, "Mã liệu"), /*#__PURE__*/React.createElement("th", null, "Số lượng"), /*#__PURE__*/React.createElement("th", null, "Còn lại"), /*#__PURE__*/React.createElement("th", null, "Tiến trình công đoạn"), /*#__PURE__*/React.createElement("th", null, "Tiến độ"), /*#__PURE__*/React.createElement("th", null, "Trạng thái"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, filtered.map(o => {
     const prog = orderProgress(o);
     return /*#__PURE__*/React.createElement("tr", {
       key: o.id,
@@ -4847,6 +4847,11 @@ function OrdersPage({
         fontWeight: 600
       }
     }, o.customer), /*#__PURE__*/React.createElement("td", {
+      className: "mes-mono",
+      style: {
+        color: COLORS.textDim
+      }
+    }, o.orderDate ? fmtDate(o.orderDate) : "—"), /*#__PURE__*/React.createElement("td", {
       className: "mes-mono"
     }, o.spec), /*#__PURE__*/React.createElement("td", null, o.materialCode || "—"), /*#__PURE__*/React.createElement("td", {
       className: "mes-mono"
