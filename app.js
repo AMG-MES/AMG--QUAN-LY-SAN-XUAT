@@ -2718,6 +2718,18 @@ function fmtDateTime(iso) {
 function uid(prefix) {
   return prefix + "-" + Math.random().toString(36).slice(2, 9);
 }
+// So khớp đường kính dây (vd "0.53") với quy cách đơn hàng (vd "0.53BC", "7/0.53BC", "0.53")
+// — dùng để phân biệt các đơn cùng khách hàng/mã liệu nhưng khác đường kính.
+function specDiameterMatches(spec, diameter) {
+  if (diameter === undefined || diameter === null || diameter === "") return true; // không nhập đường kính -> không lọc theo tiêu chí này
+  const specStr = String(spec || "").trim().toUpperCase();
+  const m = specStr.match(/([\d.]+)\s*(BC|TC)?$/);
+  if (!m) return false;
+  const specDia = parseFloat(m[1]);
+  const inputDia = parseFloat(diameter);
+  if (isNaN(specDia) || isNaN(inputDia)) return false;
+  return Math.abs(specDia - inputDia) < 0.0005;
+}
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
@@ -8426,6 +8438,10 @@ function KeoTrungPage({
       setMsg("Vui lòng chọn Dây cứng hoặc Dây ủ mềm.");
       return;
     }
+    if (customer && !diameter) {
+      setMsg("Đã nhập khách hàng — vui lòng nhập Đường kính dây (mm) để gán đúng đơn hàng (tránh nhầm giữa các đơn cùng khách/mã liệu khác quy cách).");
+      return;
+    }
     onSubmit({
       stageKey: "keo_trung",
       qty: n,
@@ -9835,7 +9851,7 @@ function AppInner() {
     if (customer) {
       // onSnapshot keeps data.orders fresh
       const customerNorm = (customer || "").trim().toUpperCase();
-      const matchOrders = baseOrders.filter(o => (o.customer || "").trim().toUpperCase() === customerNorm && (o.materialCode || "") === materialCode && (o.stages?.keo_trung?.done || 0) < (o.quantity || 0));
+      const matchOrders = baseOrders.filter(o => (o.customer || "").trim().toUpperCase() === customerNorm && (o.materialCode || "") === materialCode && specDiameterMatches(o.spec, diameter) && (o.stages?.keo_trung?.done || 0) < (o.quantity || 0));
       if (matchOrders.length > 0) {
         const sorted = [...matchOrders].sort((a, b) => new Date(a.orderDate || 0) - new Date(b.orderDate || 0));
         let remaining = qty;
