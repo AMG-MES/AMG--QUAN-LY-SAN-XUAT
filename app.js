@@ -10303,7 +10303,9 @@ function GlobalStyle() {
     .mes-btn:hover{filter:brightness(1.08);}
     .mes-btn-ghost:hover{background:${COLORS.bgPanel2};}
     .mes-table{width:100%;border-collapse:collapse;font-size:13px;}
-    .mes-table th{text-align:left;padding:9px 10px;color:${COLORS.textFaint};font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid ${COLORS.border};}
+    .mes-table th{text-align:left;padding:12px 10px;color:${COLORS.copperBright};background:${COLORS.bgInset};font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.045em;border-bottom:2px solid ${COLORS.copper}55;}
+    .mes-table th:first-child{border-top-left-radius:8px;}
+    .mes-table th:last-child{border-top-right-radius:8px;}
     .mes-table td{padding:10px;border-bottom:1px solid ${COLORS.border};}
     .mes-scroll-x{overflow-x:auto;}
     .mes-flow-line{color:${COLORS.textFaint};font-size:12.5px;}
