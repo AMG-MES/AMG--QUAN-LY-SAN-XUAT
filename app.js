@@ -536,7 +536,7 @@ const NAV_ITEMS = [{
   key: "machines",
   label: "Máy móc thiết bị",
   icon: Cog,
-  roles: ["admin"]
+  roles: ["admin", "employee"]
 }, {
   key: "qc",
   label: "Chất lượng & Phế liệu",
@@ -546,7 +546,7 @@ const NAV_ITEMS = [{
   key: "staff",
   label: "Nhân sự",
   icon: Users,
-  roles: ["admin"]
+  roles: ["admin", "employee"]
 }, {
   key: "reports",
   label: "Báo cáo & Biểu đồ",
@@ -4845,6 +4845,7 @@ function OrdersPage({
 function MachineStatusModal({
   machine,
   isAdmin,
+  canDelete,
   onClose,
   onSave,
   onDelete
@@ -4905,7 +4906,7 @@ function MachineStatusModal({
       display: "flex",
       gap: 10
     }
-  }, /*#__PURE__*/React.createElement(Button, {
+  }, canDelete && /*#__PURE__*/React.createElement(Button, {
     variant: "danger",
     onClick: handleDelete
   }, /*#__PURE__*/React.createElement(Trash2, {
@@ -5062,6 +5063,7 @@ function MachineGroup({
 function MachinesPage({
   machines,
   isAdmin,
+  canEdit,
   onUpdateMachine,
   onAddMachine,
   onDeleteMachine,
@@ -5131,12 +5133,13 @@ function MachinesPage({
     key: g.type.key,
     type: g.type,
     machines: g.machines,
-    isAdmin: isAdmin,
+    isAdmin: canEdit,
     onSelect: setSelected,
     onAddMachine: onAddMachine
   })), selected && /*#__PURE__*/React.createElement(MachineStatusModal, {
     machine: selected,
-    isAdmin: isAdmin,
+    isAdmin: canEdit,
+    canDelete: isAdmin,
     onClose: () => setSelected(null),
     onSave: (id, status, note) => onUpdateMachine(id, status, note),
     onDelete: onDeleteMachine
@@ -6817,6 +6820,7 @@ function AttendanceSection({
 function StaffPage({
   staff,
   isAdmin,
+  canEdit,
   onAdd,
   onUpdate,
   onDelete,
@@ -6839,12 +6843,12 @@ function StaffPage({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: `${staff.length} nhân viên`,
     title: "Nhân sự & Điểm danh",
-    action: isAdmin && /*#__PURE__*/React.createElement("div", {
+    action: canEdit && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 8
       }
-    }, /*#__PURE__*/React.createElement(Button, {
+    }, isAdmin && /*#__PURE__*/React.createElement(Button, {
       onClick: () => setShowImport(true)
     }, /*#__PURE__*/React.createElement(Upload, {
       size: 14
@@ -6953,7 +6957,7 @@ function StaffPage({
     className: "mes-scroll-x"
   }, /*#__PURE__*/React.createElement("table", {
     className: "mes-table"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Mã NV"), /*#__PURE__*/React.createElement("th", null, "Họ và tên"), /*#__PURE__*/React.createElement("th", null, "Tình trạng"), isAdmin && /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, g.members.map(m => /*#__PURE__*/React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Mã NV"), /*#__PURE__*/React.createElement("th", null, "Họ và tên"), /*#__PURE__*/React.createElement("th", null, "Tình trạng"), canEdit && /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, g.members.map(m => /*#__PURE__*/React.createElement("tr", {
     key: m.id
   }, /*#__PURE__*/React.createElement("td", {
     className: "mes-mono"
@@ -6963,7 +6967,7 @@ function StaffPage({
     }
   }, m.name), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(Badge, {
     color: m.status === "Đang làm" ? COLORS.green : m.status === "Nghỉ phép" ? COLORS.amber : COLORS.textFaint
-  }, m.status)), isAdmin && /*#__PURE__*/React.createElement("td", {
+  }, m.status)), canEdit && /*#__PURE__*/React.createElement("td", {
     style: {
       display: "flex",
       gap: 4
@@ -6972,7 +6976,7 @@ function StaffPage({
     icon: Pencil,
     onClick: () => setModal(m),
     title: "Sửa"
-  }), /*#__PURE__*/React.createElement(IconButton, {
+  }), isAdmin && /*#__PURE__*/React.createElement(IconButton, {
     icon: Trash2,
     danger: true,
     onClick: async () => {
@@ -9696,6 +9700,9 @@ function AppInner() {
     storageError: data.storageError
   });
   const isAdmin = currentUser.role === "admin";
+  // Nhân viên được XEM và NHẬP (thêm/sửa) ở Nhân sự & Máy móc thiết bị,
+  // nhưng KHÔNG được xoá hoặc nhập hàng loạt — các quyền đó vẫn dành riêng cho Quản trị viên.
+  const canEditStaffMachines = isAdmin || currentUser.role === "employee";
   // Alias dùng trong các handler bên dưới (đơn hàng luôn lấy từ dữ liệu mới nhất qua onSnapshot)
   const baseOrders = data.orders;
   function audit(type, detail, targetId, extra) {
@@ -10163,6 +10170,7 @@ function AppInner() {
   }), activeTab === "machines" && /*#__PURE__*/React.createElement(MachinesPage, {
     machines: data.machines,
     isAdmin: isAdmin,
+    canEdit: canEditStaffMachines,
     onUpdateMachine: handleUpdateMachine,
     onAddMachine: handleAddMachine,
     onDeleteMachine: handleDeleteMachine,
@@ -10178,6 +10186,7 @@ function AppInner() {
   }), activeTab === "staff" && /*#__PURE__*/React.createElement(StaffPage, {
     staff: data.staff,
     isAdmin: isAdmin,
+    canEdit: canEditStaffMachines,
     onAdd: handleAddStaff,
     onUpdate: handleUpdateStaff,
     onDelete: handleDeleteStaff,
