@@ -10308,9 +10308,8 @@ function GlobalStyle() {
     .mes-table th:first-child{border-top-left-radius:8px;}
     .mes-table th:last-child{border-top-right-radius:8px;}
     .mes-table td{padding:10px;border-bottom:1px solid ${COLORS.border};}
-    .mes-scroll-x{overflow-x:auto;}
-    .mes-scroll-x:has(.mes-table){max-height:min(560px,65vh);overflow-y:auto;}
-    .mes-scroll-x:has(.mes-table) .mes-table thead th{position:sticky;top:0;z-index:2;}
+    .mes-scroll-x{overflow-x:auto;max-height:min(560px,65vh);overflow-y:auto;}
+    .mes-table thead th{position:sticky;top:0;z-index:2;}
     .mes-flow-line{color:${COLORS.textFaint};font-size:12.5px;}
     ::-webkit-scrollbar{width:9px;height:9px;}
     ::-webkit-scrollbar-thumb{background:${COLORS.border};border-radius:6px;}
