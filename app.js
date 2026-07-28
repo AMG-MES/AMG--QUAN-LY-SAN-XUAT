@@ -2952,11 +2952,17 @@ function useAppData() {
         ...d.data()
       })));
       done();
-    }, () => done()), db.collection(FS.audit).orderBy("ts", "desc").limit(500).onSnapshot(s => {
-      setAuditLog(s.docs.map(d => ({
+    }, () => done()), db.collection(FS.audit).orderBy("ts", "desc").onSnapshot(s => {
+      // Giữ lại đúng 365 ngày gần nhất (không giới hạn số lượng bản ghi trong khoảng đó)
+      const cutoff = Date.now() - 365 * 24 * 60 * 60 * 1000;
+      const list = s.docs.map(d => ({
         id: d.id,
         ...d.data()
-      })));
+      })).filter(a => {
+        const t = a.ts && typeof a.ts.toMillis === "function" ? a.ts.toMillis() : new Date(a.ts || 0).getTime();
+        return isNaN(t) || t >= cutoff; // giữ lại cả bản ghi chưa có ts hợp lệ (tránh mất dữ liệu cũ vì lỗi định dạng)
+      });
+      setAuditLog(list);
       done();
     }, () => done()), db.collection(FS.users).onSnapshot(s => {
       setUsers(s.docs.map(d => ({
