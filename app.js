@@ -344,24 +344,24 @@ const Factory = _ic('🏭'),
   FileSpreadsheet = _ic('📊');
 /* ===================== DESIGN TOKENS ===================== */
 const COLORS = {
-  bg: "#0E1116",
-  bgPanel: "#161B22",
-  bgPanel2: "#1C232C",
-  bgInset: "#0B0E13",
-  border: "#2A323D",
-  borderLight: "#384150",
-  text: "#E6EDF3",
-  textDim: "#8B949E",
-  textFaint: "#5B6472",
-  copper: "#D98352",
-  copperBright: "#F0996B",
-  amber: "#E3B341",
-  green: "#3FB950",
-  greenDim: "#26513A",
-  red: "#F85149",
-  redDim: "#4C2326",
-  blue: "#58A6FF",
-  violet: "#A78BFA"
+  bg: "#F4F6F9",
+  bgPanel: "#FFFFFF",
+  bgPanel2: "#F1F4F8",
+  bgInset: "#F7F9FB",
+  border: "#E2E8F0",
+  borderLight: "#CBD5E1",
+  text: "#1A2130",
+  textDim: "#5B6472",
+  textFaint: "#94A0B2",
+  copper: "#C2652F",
+  copperBright: "#E07B39",
+  amber: "#B45309",
+  green: "#15803D",
+  greenDim: "#DCFCE7",
+  red: "#DC2626",
+  redDim: "#FEE2E2",
+  blue: "#2563EB",
+  violet: "#7C3AED"
 };
 const FONT_DISPLAY = "'Space Grotesk', 'Inter', system-ui, sans-serif";
 const FONT_BODY = "'Inter', system-ui, -apple-system, sans-serif";
@@ -373,32 +373,44 @@ const STAGES = [{
   key: "keo_trung",
   label: "Kéo trung",
   short: "KT",
-  icon: "drawing"
+  icon: "drawing",
+  emoji: "🧵",
+  color: "#C2652F"
 }, {
   key: "keo_tinh",
   label: "Kéo tinh",
   short: "KTI",
-  icon: "drawing"
+  icon: "drawing",
+  emoji: "🧵",
+  color: "#2563EB"
 }, {
   key: "keo_sieu_tinh",
   label: "Kéo siêu tinh",
   short: "KST",
-  icon: "drawing"
+  icon: "drawing",
+  emoji: "🧵",
+  color: "#0D9488"
 }, {
   key: "u_nhiet",
   label: "Ủ nhiệt",
   short: "ỦN",
-  icon: "heat"
+  icon: "heat",
+  emoji: "🔥",
+  color: "#EA580C"
 }, {
   key: "ma_thiec",
   label: "Mạ thiếc",
   short: "MT",
-  icon: "plate"
+  icon: "plate",
+  emoji: "⚗️",
+  color: "#7C3AED"
 }, {
   key: "ben",
   label: "Bện",
   short: "BN",
-  icon: "twist"
+  icon: "twist",
+  emoji: "🪢",
+  color: "#DB2777"
 }];
 const STAGE_MAP = Object.fromEntries(STAGES.map(s => [s.key, s]));
 
@@ -494,37 +506,37 @@ const TEAM_STAGE_OPTIONS = {
 const ATTENDANCE_STATUSES = [{
   key: "caNgay",
   label: "Ca Ngày",
-  color: "#58A6FF",
+  color: "#2563EB",
   icon: "☀️"
 }, {
   key: "caDem",
   label: "Ca Đêm",
-  color: "#A78BFA",
+  color: "#7C3AED",
   icon: "🌙"
 }, {
   key: "nghiPhep",
   label: "Nghỉ phép",
-  color: "#3FB950",
+  color: "#15803D",
   icon: "✅"
 }, {
   key: "daoCa",
   label: "Đảo Ca",
-  color: "#E3B341",
+  color: "#B45309",
   icon: "🔄"
 }, {
   key: "nghiKhongPhep",
   label: "Nghỉ không phép",
-  color: "#F85149",
+  color: "#DC2626",
   icon: "❌"
 }, {
   key: "diLamMuon",
   label: "Đi làm muộn",
-  color: "#FF8C00",
+  color: "#C2410C",
   icon: "⏰"
 }, {
   key: "veSom",
   label: "Về sớm",
-  color: "#FF6B6B",
+  color: "#BE185D",
   icon: "🏃"
 }];
 const NAV_ITEMS = [{
@@ -3250,11 +3262,11 @@ function LoginScreen({
   }), storageError && /*#__PURE__*/React.createElement("div", {
     style: {
       background: COLORS.redDim,
-      border: `1px solid #6E2A2D`,
+      border: `1px solid #F5B5B1`,
       borderRadius: 8,
       padding: "10px 12px",
       fontSize: 12.5,
-      color: "#FFB4AF",
+      color: "#B42318",
       marginBottom: 14,
       display: "flex",
       gap: 8
@@ -3707,17 +3719,18 @@ function StatCard({
     }
   }, label), /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 28,
-      height: 28,
-      borderRadius: 7,
-      background: `${accent}1c`,
+      width: 36,
+      height: 36,
+      borderRadius: 999,
+      background: `linear-gradient(135deg, ${accent}, ${accent}CC)`,
       display: "flex",
       alignItems: "center",
-      justifyContent: "center"
+      justifyContent: "center",
+      boxShadow: `0 4px 10px ${accent}40`
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    size: 14,
-    color: accent
+    size: 17,
+    color: "#fff"
   }))), /*#__PURE__*/React.createElement("div", {
     className: "mes-display mes-mono",
     style: {
@@ -3812,19 +3825,17 @@ function ProductionPipeline({
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 10,
-        width: 38,
-        height: 38,
-        borderRadius: 10,
-        border: `1.5px solid ${COLORS.border}`,
-        background: COLORS.bgPanel2,
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        border: `1.5px solid ${s.color}55`,
+        background: `${s.color}1a`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 11,
-        fontWeight: 700,
-        color: COLORS.text
+        fontSize: 20
       }
-    }, s.short), /*#__PURE__*/React.createElement("div", {
+    }, s.emoji), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: COLORS.textDim,
@@ -6148,7 +6159,7 @@ function StaffImportModal({
       justifyContent: "center",
       borderColor: mode === "replace" ? COLORS.red : COLORS.border,
       background: mode === "replace" ? `${COLORS.red}22` : COLORS.bgPanel2,
-      color: mode === "replace" ? "#FFB4AF" : COLORS.textDim
+      color: mode === "replace" ? COLORS.red : COLORS.textDim
     }
   }, "Thay thế toàn bộ danh sách"))), mode === "replace" && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9339,7 +9350,7 @@ function AdminPage({
       className: "mes-mono",
       style: {
         fontSize: 10,
-        color: "#FF9800",
+        color: "#C2410C",
         letterSpacing: ".07em",
         textTransform: "uppercase"
       }
@@ -10752,12 +10763,12 @@ class AppErrorBoundary extends React.Component {
         style: {
           minHeight: "100vh", display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center", gap: 14,
-          padding: 24, textAlign: "center", background: "#0D1117", color: "#E6EDF3"
+          padding: 24, textAlign: "center", background: "#F4F6F9", color: "#1A2130"
         }
       },
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 40 } }, "⚠️"),
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 17, fontWeight: 700 } }, "Đã xảy ra lỗi hiển thị"),
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: "#8B949E", maxWidth: 480 } },
+        /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: "#5B6472", maxWidth: 480 } },
           String((this.state.error && this.state.error.message) || this.state.error)),
         /*#__PURE__*/React.createElement("button", {
           onClick: () => window.location.reload(),
