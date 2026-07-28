@@ -353,13 +353,13 @@ const COLORS = {
   text: "#1A2130",
   textDim: "#5B6472",
   textFaint: "#94A0B2",
-  copper: "#C2652F",
-  copperBright: "#E07B39",
+  copper: "#D3272C",
+  copperBright: "#F04E45",
   amber: "#B45309",
   green: "#15803D",
   greenDim: "#DCFCE7",
-  red: "#DC2626",
-  redDim: "#FEE2E2",
+  red: "#9F1239",
+  redDim: "#FCE4EC",
   blue: "#2563EB",
   violet: "#7C3AED"
 };
@@ -3717,7 +3717,10 @@ function StatCard({
     style: {
       padding: 16,
       flex: 1,
-      minWidth: 180
+      minWidth: 180,
+      border: `1.5px solid ${accent}`,
+      borderTop: `4px solid ${accent}`,
+      boxShadow: `0 2px 8px ${accent}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3769,7 +3772,8 @@ function ProductionPipeline({
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: "22px 18px 18px"
+      padding: "22px 18px 18px",
+      borderTop: `4px solid ${COLORS.blue}`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3924,7 +3928,8 @@ function QuickEntryForm({
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: 18
+      padding: 18,
+      borderTop: `4px solid ${COLORS.copper}`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4050,7 +4055,8 @@ function ActivityFeed({
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: 18
+      padding: 18,
+      borderTop: `4px solid ${COLORS.violet}`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4168,19 +4174,19 @@ function DashboardPage({
     label: "Máy đang chạy",
     value: `${machineStats.running}/${machines.length}`,
     sub: `${machineStats.maintenance} bảo trì · ${machineStats.broken} hỏng`,
-    accent: COLORS.green
+    accent: COLORS.blue
   }), /*#__PURE__*/React.createElement(StatCard, {
     icon: Users,
     label: "Nhân sự",
     value: staff.length,
     sub: `${TEAMS.filter(t => staff.some(s => s.team === t)).length} tổ sản xuất`,
-    accent: COLORS.blue
+    accent: COLORS.green
   }), /*#__PURE__*/React.createElement(StatCard, {
     icon: Recycle,
     label: "Phế liệu 7 ngày qua",
     value: `${fmtNum(last7Scrap)} kg`,
     sub: `${scrap.length} lượt ghi nhận`,
-    accent: COLORS.red
+    accent: "#EA580C"
   })), /*#__PURE__*/React.createElement(ProductionPipeline, {
     stageTotals: stageTotals
   }), /*#__PURE__*/React.createElement("div", {
