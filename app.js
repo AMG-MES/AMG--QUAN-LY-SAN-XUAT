@@ -5562,49 +5562,76 @@ function QCPage({
     style: {
       textAlign: "right"
     }
-  }, "Phế liệu (kg)"), /*#__PURE__*/React.createElement("th", null, "Tỷ lệ phế liệu"))), /*#__PURE__*/React.createElement("tbody", null, byStageDetailed.map(r => /*#__PURE__*/React.createElement("tr", {
-    key: r.key
-  }, /*#__PURE__*/React.createElement("td", {
-    style: {
-      fontWeight: 600
-    }
-  }, r.label), /*#__PURE__*/React.createElement("td", {
-    className: "mes-mono",
-    style: {
-      textAlign: "right"
-    }
-  }, fmtNum(r.production)), /*#__PURE__*/React.createElement("td", {
-    className: "mes-mono",
-    style: {
-      textAlign: "right",
-      color: r.scrapQty > 0 ? COLORS.red : COLORS.textFaint
-    }
-  }, fmtNum(r.scrapQty)), /*#__PURE__*/React.createElement("td", {
-    style: {
-      width: 220
-    }
-  }, r.pct === null ? /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: COLORS.textFaint
-    }
-  }, "—") : /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement(ProgressBar, {
-    pct: Math.min(100, r.pct),
-    color: r.pct > 5 ? COLORS.red : r.pct > 2 ? COLORS.amber : COLORS.green
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "mes-mono",
-    style: {
-      fontSize: 12.5,
-      fontWeight: 700,
-      color: r.pct > 5 ? COLORS.red : r.pct > 2 ? COLORS.amber : COLORS.green,
-      flexShrink: 0
-    }
-  }, r.pct.toFixed(2), "%")))))), /*#__PURE__*/React.createElement("tfoot", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
+  }, "Phế liệu (kg)"), /*#__PURE__*/React.createElement("th", null, "Tỷ lệ phế liệu"))), /*#__PURE__*/React.createElement("tbody", null, (() => {
+    const renderStageRow = (r, isSubtotal) => /*#__PURE__*/React.createElement("tr", {
+      key: r.key,
+      style: isSubtotal ? {
+        background: COLORS.bgInset,
+        borderTop: `1px solid ${COLORS.copper}55`,
+        borderBottom: `1px solid ${COLORS.copper}55`
+      } : undefined
+    }, /*#__PURE__*/React.createElement("td", {
+      style: {
+        fontWeight: isSubtotal ? 700 : 600,
+        color: isSubtotal ? COLORS.copperBright : COLORS.text
+      }
+    }, r.label), /*#__PURE__*/React.createElement("td", {
+      className: "mes-mono",
+      style: {
+        textAlign: "right",
+        fontWeight: isSubtotal ? 700 : 400
+      }
+    }, fmtNum(r.production)), /*#__PURE__*/React.createElement("td", {
+      className: "mes-mono",
+      style: {
+        textAlign: "right",
+        fontWeight: isSubtotal ? 700 : 400,
+        color: r.scrapQty > 0 ? COLORS.red : COLORS.textFaint
+      }
+    }, fmtNum(r.scrapQty)), /*#__PURE__*/React.createElement("td", {
+      style: {
+        width: 220
+      }
+    }, r.pct === null ? /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: COLORS.textFaint
+      }
+    }, "—") : /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement(ProgressBar, {
+      pct: Math.min(100, r.pct),
+      color: r.pct > 5 ? COLORS.red : r.pct > 2 ? COLORS.amber : COLORS.green
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "mes-mono",
+      style: {
+        fontSize: 12.5,
+        fontWeight: 700,
+        color: r.pct > 5 ? COLORS.red : r.pct > 2 ? COLORS.amber : COLORS.green,
+        flexShrink: 0
+      }
+    }, r.pct.toFixed(2), "%"))));
+    return byStageDetailed.flatMap(r => {
+      const row = renderStageRow(r, false);
+      if (r.key !== "keo_sieu_tinh") return [row];
+      // Chèn dòng tổng hợp riêng cho 3 khâu Kéo trung + Kéo tinh + Kéo siêu tinh
+      const keoStages = byStageDetailed.filter(x => ["keo_trung", "keo_tinh", "keo_sieu_tinh"].includes(x.key));
+      const subProd = keoStages.reduce((a, x) => a + x.production, 0);
+      const subScrap = keoStages.reduce((a, x) => a + x.scrapQty, 0);
+      const subPct = subProd + subScrap > 0 ? subScrap / (subProd + subScrap) * 100 : null;
+      const subtotalRow = renderStageRow({
+        key: "subtotal-keo",
+        label: "Tổng 3 khâu Kéo (Trung + Tinh + Siêu tinh)",
+        production: subProd,
+        scrapQty: subScrap,
+        pct: subPct
+      }, true);
+      return [row, subtotalRow];
+    });
+  })()), /*#__PURE__*/React.createElement("tfoot", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", {
     style: {
       fontWeight: 700,
       borderTop: `2px solid ${COLORS.border}`
