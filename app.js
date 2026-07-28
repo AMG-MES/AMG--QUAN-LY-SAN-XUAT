@@ -344,7 +344,7 @@ const Factory = _ic('🏭'),
   FileSpreadsheet = _ic('📊');
 /* ===================== DESIGN TOKENS ===================== */
 const COLORS = {
-  bg: "#F4F6F9",
+  bg: "#EAEFF5",
   bgPanel: "#FFFFFF",
   bgPanel2: "#F1F4F8",
   bgInset: "#F7F9FB",
@@ -3453,19 +3453,25 @@ function Sidebar({
   mobileOpen,
   onCloseMobile
 }) {
+  const SB_BG = "#16233F";
+  const SB_BG2 = "#1D2F52";
+  const SB_BORDER = "rgba(255,255,255,0.09)";
+  const SB_TEXT = "#EAF0F9";
+  const SB_TEXT_DIM = "#93A2BE";
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-sidebar" + (mobileOpen ? " mes-sidebar--open" : ""),
     style: {
       width: collapsed ? 64 : 232,
       flexShrink: 0,
-      background: COLORS.bgPanel,
-      borderRight: `1px solid ${COLORS.border}`,
+      background: `linear-gradient(190deg, ${SB_BG}, #101A30)`,
+      borderRight: `1px solid ${SB_BORDER}`,
       display: "flex",
       flexDirection: "column",
       height: "100vh",
       position: "sticky",
       top: 0,
-      transition: "width .18s ease"
+      transition: "width .18s ease",
+      boxShadow: "2px 0 14px rgba(15,23,42,.12)"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3473,7 +3479,7 @@ function Sidebar({
       alignItems: "center",
       gap: 10,
       padding: "18px 16px",
-      borderBottom: `1px solid ${COLORS.border}`,
+      borderBottom: `1px solid ${SB_BORDER}`,
       minHeight: 60
     }
   }, /*#__PURE__*/React.createElement("img", {
@@ -3499,12 +3505,13 @@ function Sidebar({
       fontWeight: 700,
       whiteSpace: "nowrap",
       overflow: "hidden",
-      textOverflow: "ellipsis"
+      textOverflow: "ellipsis",
+      color: SB_TEXT
     }
   }, COMPANY_NAME), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10.5,
-      color: COLORS.textFaint,
+      color: SB_TEXT_DIM,
       whiteSpace: "nowrap"
     }
   }, "Xưởng Đồng · MES")), /*#__PURE__*/React.createElement("button", {
@@ -3514,7 +3521,7 @@ function Sidebar({
     style: {
       border: "none",
       background: "transparent",
-      color: COLORS.textDim,
+      color: SB_TEXT_DIM,
       cursor: "pointer",
       padding: 4,
       display: "none"
@@ -3545,11 +3552,11 @@ function Sidebar({
         border: "none",
         cursor: "pointer",
         textAlign: "left",
-        background: isActive ? "rgba(217,131,82,0.14)" : "transparent",
-        color: isActive ? COLORS.copperBright : COLORS.textDim,
+        background: isActive ? "rgba(224,123,57,0.22)" : "transparent",
+        color: isActive ? "#FFB98A" : SB_TEXT_DIM,
         fontSize: 13,
         fontWeight: isActive ? 600 : 500,
-        borderLeft: isActive ? `2px solid ${COLORS.copper}` : "2px solid transparent"
+        borderLeft: isActive ? `2px solid ${COLORS.copperBright}` : "2px solid transparent"
       }
     }, /*#__PURE__*/React.createElement(Icon, {
       size: 16,
@@ -3564,10 +3571,20 @@ function Sidebar({
     }, item.label));
   })), /*#__PURE__*/React.createElement("button", {
     onClick: onToggleCollapse,
-    className: "mes-btn mes-btn-ghost mes-sidebar-collapse-btn",
+    className: "mes-sidebar-collapse-btn",
     style: {
       margin: 10,
-      justifyContent: "center"
+      justifyContent: "center",
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "8px 10px",
+      borderRadius: 8,
+      border: `1px solid ${SB_BORDER}`,
+      background: SB_BG2,
+      color: SB_TEXT_DIM,
+      cursor: "pointer",
+      fontSize: 12.5
     }
   }, collapsed ? /*#__PURE__*/React.createElement(ChevronRight, {
     size: 15
@@ -10412,10 +10429,10 @@ function GlobalStyle() {
     .mes-root{font-family:${FONT_BODY};}
     .mes-display{font-family:${FONT_DISPLAY};}
     .mes-mono{font-family:${FONT_MONO};}
-    .mes-card{background:${COLORS.bgPanel};border:1px solid ${COLORS.border};border-radius:14px;}
+    .mes-card{background:${COLORS.bgPanel};border:1.5px solid ${COLORS.borderLight};border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);}
     .mes-fade-in{animation:mesFadeIn .25s ease;}
     @keyframes mesFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-    .mes-input{width:100%;background:${COLORS.bgInset};border:1px solid ${COLORS.border};border-radius:8px;color:${COLORS.text};padding:9px 11px;font-size:13.5px;outline:none;font-family:inherit;}
+    .mes-input{width:100%;background:${COLORS.bgInset};border:1.5px solid ${COLORS.borderLight};border-radius:8px;color:${COLORS.text};padding:9px 11px;font-size:13.5px;outline:none;font-family:inherit;}
     .mes-input:focus{border-color:${COLORS.copper};}
     .mes-btn{transition:filter .15s ease,opacity .15s ease;}
     .mes-btn:hover{filter:brightness(1.08);}
@@ -10763,7 +10780,7 @@ class AppErrorBoundary extends React.Component {
         style: {
           minHeight: "100vh", display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center", gap: 14,
-          padding: 24, textAlign: "center", background: "#F4F6F9", color: "#1A2130"
+          padding: 24, textAlign: "center", background: "#EAEFF5", color: "#1A2130"
         }
       },
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 40 } }, "⚠️"),
