@@ -3121,17 +3121,18 @@ function LoginScreen({
   }, /*#__PURE__*/React.createElement(GlobalStyle, null), /*#__PURE__*/React.createElement("div", {
     className: "mes-login-image-panel",
     style: {
-      flex: "1.15",
+      flex: "1.7",
       position: "relative",
       backgroundImage: `url(${FACTORY_PHOTO_DATA_URI})`,
       backgroundSize: "cover",
-      backgroundPosition: "center"
+      backgroundPosition: "center",
+      filter: "brightness(1.15) saturate(1.12) contrast(1.03)"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       inset: 0,
-      background: `linear-gradient(200deg, rgba(11,14,19,.35) 0%, rgba(11,14,19,.55) 45%, rgba(11,14,19,.92) 100%)`
+      background: `linear-gradient(200deg, rgba(11,14,19,.08) 0%, rgba(11,14,19,.18) 55%, rgba(11,14,19,.72) 100%)`
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
