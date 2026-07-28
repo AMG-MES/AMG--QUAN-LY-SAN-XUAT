@@ -6322,31 +6322,32 @@ function AttendanceCheckbox({
     onClick: () => onChange(!checked),
     title: status.label,
     style: {
-      width: 28,
-      height: 28,
-      borderRadius: 6,
-      border: `1.5px solid ${checked ? status.color : COLORS.border}`,
-      background: checked ? `${status.color}25` : COLORS.bgInset,
+      width: 26,
+      height: 26,
+      borderRadius: 7,
+      border: checked ? `1.5px solid ${status.color}` : `1.5px solid ${COLORS.borderLight}`,
+      background: checked ? status.color : "#fff",
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      fontSize: 13,
       transition: "all .12s ease",
-      flexShrink: 0
+      flexShrink: 0,
+      padding: 0,
+      boxShadow: checked ? `0 1px 3px ${status.color}55` : "none"
     }
-  }, checked ? /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: status.color,
-      fontWeight: 800,
-      fontSize: 16
-    }
-  }, "✓") : /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: COLORS.border,
-      fontSize: 10
-    }
-  }, "—"));
+  }, checked && /*#__PURE__*/React.createElement("svg", {
+    width: 14,
+    height: 14,
+    viewBox: "0 0 16 16",
+    fill: "none"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M3 8.5L6.2 11.5L13 4.5",
+    stroke: "#fff",
+    strokeWidth: 2.3,
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  })));
 }
 function AttendanceSection({
   staff,
