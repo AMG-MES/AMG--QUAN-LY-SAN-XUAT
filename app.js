@@ -5611,7 +5611,12 @@ function OrdersPage({
   }, /*#__PURE__*/React.createElement(Trash2, {
     size: 14
   }), " Xóa đã chọn"))), /*#__PURE__*/React.createElement("div", {
-    className: "mes-card mes-scroll-x"
+    className: "mes-card mes-scroll-x",
+    style: {
+      border: `1.5px solid ${COLORS.copper}55`,
+      borderTop: `4px solid ${COLORS.copper}`,
+      boxShadow: `0 2px 8px ${COLORS.copper}22`
+    }
   }, filtered.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     title: orders.length === 0 ? "Chưa có dữ liệu đơn hàng" : "Không tìm thấy đơn hàng phù hợp",
     hint: orders.length === 0 ? "Danh sách đơn hàng trống — có thể do dữ liệu chưa được nạp đầy đủ." : undefined,
@@ -5809,7 +5814,9 @@ function MachineGroup({
     className: "mes-card",
     style: {
       marginBottom: 12,
-      overflow: "hidden"
+      overflow: "hidden",
+      border: `1.5px solid ${COLORS.copper}40`,
+      borderTop: `4px solid ${COLORS.copper}`
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setOpen(o => !o),
@@ -5968,7 +5975,9 @@ function MachinesPage({
       flex: 1,
       minWidth: 130,
       cursor: "pointer",
-      border: filter === k ? `1px solid ${v.color}` : `1px solid ${COLORS.border}`,
+      border: filter === k ? `1.5px solid ${v.color}` : `1.5px solid ${v.color}40`,
+      borderTop: `4px solid ${v.color}`,
+      boxShadow: filter === k ? `0 2px 8px ${v.color}33` : "none",
       textAlign: "left"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -6310,7 +6319,10 @@ function QCPage({
       padding: 16,
       flex: 2,
       minWidth: 320,
-      height: 130
+      height: 130,
+      border: `1.5px solid ${COLORS.violet}55`,
+      borderTop: `4px solid ${COLORS.violet}`,
+      boxShadow: `0 2px 8px ${COLORS.violet}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6351,7 +6363,10 @@ function QCPage({
   }))))), /*#__PURE__*/React.createElement("div", {
     className: "mes-card mes-scroll-x",
     style: {
-      marginBottom: 18
+      marginBottom: 18,
+      border: `1.5px solid ${COLORS.blue}55`,
+      borderTop: `4px solid ${COLORS.blue}`,
+      boxShadow: `0 2px 8px ${COLORS.blue}22`
     }
   }, /*#__PURE__*/React.createElement("table", {
     className: "mes-table"
@@ -6467,7 +6482,10 @@ function QCPage({
     className: "mes-card mes-scroll-x",
     style: {
       marginBottom: 18,
-      padding: 18
+      padding: 18,
+      border: `1.5px solid ${COLORS.orange}55`,
+      borderTop: `4px solid ${COLORS.orange}`,
+      boxShadow: `0 2px 8px ${COLORS.orange}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6547,7 +6565,12 @@ function QCPage({
       borderTop: `2px solid ${COLORS.border}`
     }
   }, fmtNum(total)))))), /*#__PURE__*/React.createElement("div", {
-    className: "mes-card mes-scroll-x"
+    className: "mes-card mes-scroll-x",
+    style: {
+      border: `1.5px solid #0D948855`,
+      borderTop: `4px solid #0D9488`,
+      boxShadow: `0 2px 8px #0D948822`
+    }
   }, sorted.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     icon: FlaskConical,
     title: "Chưa có dữ liệu phế liệu"
@@ -7826,7 +7849,9 @@ function StaffPage({
     key: g.team,
     className: "mes-card",
     style: {
-      marginBottom: 14
+      marginBottom: 14,
+      border: `1.5px solid ${COLORS.blue}40`,
+      borderTop: `4px solid ${COLORS.blue}`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7900,12 +7925,16 @@ function ChartCard({
   title,
   eyebrow,
   children,
-  height = 260
+  height = 260,
+  accent = COLORS.blue
 }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: 18
+      padding: 18,
+      border: `1.5px solid ${accent}55`,
+      borderTop: `4px solid ${accent}`,
+      boxShadow: `0 2px 8px ${accent}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8510,7 +8539,8 @@ function ReportsPage({
     }
   }, /*#__PURE__*/React.createElement(ChartCard, {
     title: "Sản lượng hiện tại theo công đoạn",
-    eyebrow: "Tổng hợp từ đơn hàng đang mở"
+    eyebrow: "Tổng hợp từ đơn hàng đang mở",
+    accent: COLORS.copper
   }, /*#__PURE__*/React.createElement(BarChart, {
     data: liveStageData
   }, /*#__PURE__*/React.createElement(CartesianGrid, {
@@ -8548,7 +8578,8 @@ function ReportsPage({
     radius: [5, 5, 0, 0]
   }))), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Phân bố trạng thái đơn hàng",
-    eyebrow: `${orders.length} đơn hàng`
+    eyebrow: `${orders.length} đơn hàng`,
+    accent: COLORS.violet
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: statusDist,
     dataKey: "value",
@@ -8580,6 +8611,7 @@ function ReportsPage({
   }, /*#__PURE__*/React.createElement(ChartCard, {
     title: "Sản lượng theo từng khách hàng",
     eyebrow: `${customers.length} khách hàng`,
+    accent: COLORS.blue,
     height: Math.max(260, byCustomerData.length * 34)
   }, /*#__PURE__*/React.createElement(BarChart, {
     data: byCustomerData,
@@ -8639,6 +8671,7 @@ function ReportsPage({
   }, /*#__PURE__*/React.createElement(ChartCard, {
     title: "Tiến độ chi tiết theo từng đơn hàng",
     eyebrow: `${orderDetailData.length} đơn hàng${customerFilter !== "all" ? " · " + customerFilter : ""}`,
+    accent: COLORS.green,
     height: Math.max(220, orderDetailData.length * 30)
   }, orderDetailData.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     title: "Không có đơn hàng"
@@ -8713,7 +8746,10 @@ function ReportsPage({
   }, /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: 18
+      padding: 18,
+      border: `1.5px solid ${COLORS.copper}55`,
+      borderTop: `4px solid ${COLORS.copper}`,
+      boxShadow: `0 2px 8px ${COLORS.copper}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8912,6 +8948,7 @@ function ReportsPage({
   }, /*#__PURE__*/React.createElement(ChartCard, {
     title: "Lịch sử sản lượng theo công đoạn (báo cáo tháng 6/2026)",
     eyebrow: `${timeseries.length} kỳ ghi nhận`,
+    accent: COLORS.orange,
     height: 300
   }, /*#__PURE__*/React.createElement(LineChart, {
     data: historicalData
@@ -8986,7 +9023,8 @@ function ReportsPage({
     }
   }, /*#__PURE__*/React.createElement(ChartCard, {
     title: "Xu hướng phế liệu theo ngày",
-    eyebrow: `${scrap.length} lượt ghi nhận`
+    eyebrow: `${scrap.length} lượt ghi nhận`,
+    accent: COLORS.red
   }, scrapByDate.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     icon: TrendingUp,
     title: "Chưa có đủ dữ liệu"
@@ -9028,7 +9066,8 @@ function ReportsPage({
     strokeWidth: 2
   }))), /*#__PURE__*/React.createElement(ChartCard, {
     title: "Tình trạng máy móc thiết bị",
-    eyebrow: `${machines.length} máy`
+    eyebrow: `${machines.length} máy`,
+    accent: "#0D9488"
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: machineDist,
     dataKey: "value",
@@ -9110,7 +9149,10 @@ function ReportsPage({
       key: s.key,
       className: "mes-card",
       style: {
-        padding: 18
+        padding: 18,
+        border: `1.5px solid ${s.color}55`,
+        borderTop: `4px solid ${s.color}`,
+        boxShadow: `0 2px 8px ${s.color}22`
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -9429,7 +9471,10 @@ function KeoTrungPage({
   }, /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: 18
+      padding: 18,
+      border: `1.5px solid ${COLORS.copper}55`,
+      borderTop: `4px solid ${COLORS.copper}`,
+      boxShadow: `0 2px 8px ${COLORS.copper}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9618,7 +9663,10 @@ function KeoTrungPage({
   }, /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: 16
+      padding: 16,
+      border: `1.5px solid ${COLORS.green}55`,
+      borderTop: `4px solid ${COLORS.green}`,
+      boxShadow: `0 2px 8px ${COLORS.green}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -9767,7 +9815,9 @@ function KeoTrungPage({
   }))), /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
-      padding: 18
+      padding: 18,
+      border: `1.5px solid ${COLORS.copper}40`,
+      borderTop: `4px solid ${COLORS.copper}`
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowEntries(o => !o),
@@ -10049,7 +10099,10 @@ function AdminPage({
       className: "mes-card",
       style: {
         padding: 20,
-        marginBottom: 20
+        marginBottom: 20,
+        border: `1.5px solid ${COLORS.orange}55`,
+        borderTop: `4px solid ${COLORS.orange}`,
+        boxShadow: `0 2px 8px ${COLORS.orange}22`
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -10149,7 +10202,10 @@ function AdminPage({
     className: "mes-card",
     style: {
       padding: 20,
-      marginBottom: 20
+      marginBottom: 20,
+      border: `1.5px solid ${COLORS.green}55`,
+      borderTop: `4px solid ${COLORS.green}`,
+      boxShadow: `0 2px 8px ${COLORS.green}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10373,7 +10429,10 @@ function AdminPage({
   }), /*#__PURE__*/React.createElement("div", {
     className: "mes-card mes-scroll-x",
     style: {
-      marginBottom: 24
+      marginBottom: 24,
+      border: `1.5px solid ${COLORS.violet}55`,
+      borderTop: `4px solid ${COLORS.violet}`,
+      boxShadow: `0 2px 8px ${COLORS.violet}22`
     }
   }, /*#__PURE__*/React.createElement("table", {
     className: "mes-table"
@@ -10458,7 +10517,10 @@ function AdminPage({
       alignItems: "center",
       justifyContent: "space-between",
       gap: 14,
-      flexWrap: "wrap"
+      flexWrap: "wrap",
+      border: `1.5px solid ${COLORS.red}55`,
+      borderTop: `4px solid ${COLORS.red}`,
+      boxShadow: `0 2px 8px ${COLORS.red}22`
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10513,7 +10575,10 @@ function AdminPage({
     className: "mes-card",
     style: {
       maxHeight: 420,
-      overflowY: "auto"
+      overflowY: "auto",
+      border: `1.5px solid ${COLORS.blue}55`,
+      borderTop: `4px solid ${COLORS.blue}`,
+      boxShadow: `0 2px 8px ${COLORS.blue}22`
     }
   }, filteredAudit.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     icon: History,
