@@ -1222,6 +1222,8 @@ const TEAM_STAGE_OPTIONS = {
   "MẠ THIẾC": ["ma_thiec"],
   "BỆN": ["ben"]
 };
+// Danh sách nguyên nhân phế liệu thường gặp — chọn nhanh thay vì phải gõ tay
+const SCRAP_REASONS = ["Đứt dây do lực kéo lớn", "Lệch quy cách / kích thước", "Oxy hoá bề mặt", "Dây bị trầy xước, móp méo", "Mối nối/hàn không đạt", "Lỗi bện xoắn không đều", "Lỗi mạ thiếc không đều", "Nhiệt độ ủ không đạt", "Lỗi do máy móc, thiết bị", "Lỗi thao tác vận hành", "Nguyên liệu đầu vào lỗi", "Rối dây, kẹt máy", "Khác"];
 const ATTENDANCE_STATUSES = [{
   key: "caNgay",
   label: "Ca Ngày",
@@ -5503,13 +5505,36 @@ function OrdersPage({
   } = useDialog();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [customerFilterSet, setCustomerFilterSet] = useState(() => new Set());
+  const [showCustomerFilter, setShowCustomerFilter] = useState(false);
   const [modalState, setModalState] = useState(null); // { mode, order }
   const [selected, setSelected] = useState(() => new Set());
+
+  // Danh sách khách hàng duy nhất kèm số lượng đơn hàng của từng khách, dùng cho bộ lọc
+  const customerCounts = useMemo(() => {
+    const map = {};
+    orders.forEach(o => {
+      const c = o.customer || "Chưa rõ";
+      map[c] = (map[c] || 0) + 1;
+    });
+    return Object.entries(map).map(([customer, count]) => ({
+      customer,
+      count
+    })).sort((a, b) => b.count - a.count);
+  }, [orders]);
+  function toggleCustomerFilter(c) {
+    setCustomerFilterSet(prev => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c); else next.add(c);
+      return next;
+    });
+  }
 
   const filtered = useMemo(() => {
     return orders.filter(o => {
       const matchesSearch = !search || [o.customer, o.spec, o.materialCode].some(v => (v || "").toLowerCase().includes(search.toLowerCase()));
       if (!matchesSearch) return false;
+      if (customerFilterSet.size > 0 && !customerFilterSet.has(o.customer || "Chưa rõ")) return false;
       if (statusFilter === "all") return true;
       const {
         statusLabel
@@ -5519,7 +5544,7 @@ function OrdersPage({
       if (statusFilter === "notstarted") return statusLabel === "Chưa bắt đầu";
       return true;
     });
-  }, [orders, search, statusFilter]);
+  }, [orders, search, statusFilter, customerFilterSet]);
   // Bỏ chọn những đơn không còn hiển thị (đã bị lọc mất / đã bị xoá)
   React.useEffect(() => {
     const visibleIds = new Set(filtered.map(o => o.id));
@@ -5624,7 +5649,91 @@ function OrdersPage({
     value: "done"
   }, "Hoàn thành"), /*#__PURE__*/React.createElement("option", {
     value: "notstarted"
-  }, "Chưa bắt đầu"))), isAdmin && selected.size > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Chưa bắt đầu")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setShowCustomerFilter(o => !o),
+    className: "mes-btn",
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "0 14px",
+      borderRadius: 8,
+      border: `1.5px solid ${customerFilterSet.size > 0 ? COLORS.copper : COLORS.borderLight}`,
+      background: customerFilterSet.size > 0 ? `${COLORS.copper}18` : COLORS.bgPanel,
+      color: customerFilterSet.size > 0 ? COLORS.copperBright : COLORS.textDim,
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement(Filter, {
+    size: 14
+  }), "Khách hàng", customerFilterSet.size > 0 && /*#__PURE__*/React.createElement(Badge, {
+    color: COLORS.copper
+  }, customerFilterSet.size))), showCustomerFilter && /*#__PURE__*/React.createElement("div", {
+    className: "mes-card",
+    style: {
+      marginBottom: 14,
+      maxHeight: 280,
+      overflowY: "auto",
+      border: `1.5px solid ${COLORS.copper}55`,
+      borderTop: `4px solid ${COLORS.copper}`
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "mes-table",
+    style: {
+      width: "100%"
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
+    style: {
+      width: 44,
+      textAlign: "center"
+    }
+  }, "STT"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      width: 40
+    }
+  }), /*#__PURE__*/React.createElement("th", null, "Khách hàng"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      textAlign: "right"
+    }
+  }, "Số đơn hàng"))), /*#__PURE__*/React.createElement("tbody", null, customerCounts.map((c, i) => /*#__PURE__*/React.createElement("tr", {
+    key: c.customer,
+    onClick: () => toggleCustomerFilter(c.customer),
+    style: {
+      cursor: "pointer",
+      background: customerFilterSet.has(c.customer) ? `${COLORS.copper}10` : "transparent"
+    }
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "mes-mono",
+    style: {
+      textAlign: "center",
+      color: COLORS.textFaint,
+      fontSize: 12
+    }
+  }, i + 1), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: customerFilterSet.has(c.customer),
+    onChange: () => toggleCustomerFilter(c.customer),
+    onClick: e => e.stopPropagation(),
+    style: {
+      width: 17,
+      height: 17,
+      accentColor: COLORS.copper,
+      cursor: "pointer"
+    }
+  })), /*#__PURE__*/React.createElement("td", {
+    style: {
+      fontWeight: 700,
+      color: COLORS.text
+    }
+  }, c.customer), /*#__PURE__*/React.createElement("td", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement(Badge, {
+    color: COLORS.blue
+  }, c.count, " đơn"))))))), isAdmin && selected.size > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -6258,7 +6367,31 @@ function ScrapAddModal({
     value: "cuộn"
   }, "cuộn"))))), /*#__PURE__*/React.createElement(Field, {
     label: "Nguyên nhân"
-  }, /*#__PURE__*/React.createElement("textarea", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 8
+    }
+  }, SCRAP_REASONS.map(r => /*#__PURE__*/React.createElement("button", {
+    key: r,
+    type: "button",
+    onClick: () => setForm(f => ({
+      ...f,
+      reason: r
+    })),
+    style: {
+      fontSize: 11.5,
+      padding: "5px 10px",
+      borderRadius: 999,
+      cursor: "pointer",
+      border: form.reason === r ? `1.5px solid ${COLORS.copper}` : `1.5px solid ${COLORS.borderLight}`,
+      background: form.reason === r ? `${COLORS.copper}20` : COLORS.bgPanel2,
+      color: form.reason === r ? COLORS.copperBright : COLORS.textDim,
+      fontWeight: form.reason === r ? 700 : 500
+    }
+  }, r))), /*#__PURE__*/React.createElement("textarea", {
     className: "mes-input",
     rows: 2,
     value: form.reason,
@@ -6266,7 +6399,7 @@ function ScrapAddModal({
       ...f,
       reason: e.target.value
     })),
-    placeholder: "ví dụ: đứt dây, lệch quy cách, oxy hoá..."
+    placeholder: "Chọn nhanh phía trên, hoặc gõ nguyên nhân khác tại đây..."
   })), /*#__PURE__*/React.createElement(Button, {
     variant: "primary",
     onClick: submit,
@@ -6325,6 +6458,10 @@ function QCPage({
     });
   }, [scrap, orders, auditLog]);
   const total = scrap.reduce((a, s) => a + (s.qty || 0), 0);
+  // % phế liệu tương đương trên tổng sản lượng — tính theo thời gian thực từ dữ liệu hiện có
+  const totalProductionAllStages = byStageDetailed.reduce((a, r) => a + r.production, 0);
+  const totalScrapPct = totalProductionAllStages + total > 0 ? total / (totalProductionAllStages + total) * 100 : null;
+  const scrapPctColor = totalScrapPct === null ? COLORS.textFaint : totalScrapPct > 5 ? COLORS.red : totalScrapPct > 2 ? COLORS.amber : COLORS.green;
   // Phế liệu theo Mã NVL (A/B/C...) tổng hợp theo ngày — bảng chéo Ngày × Mã liệu
   const byMaterialAndDate = useMemo(() => {
     const materials = [...new Set(scrap.map(s => s.materialCode || "Khác"))].sort((a, b) => a.localeCompare(b));
@@ -6371,7 +6508,12 @@ function QCPage({
     icon: Recycle,
     label: "Tổng phế liệu",
     value: `${fmtNum(total)} kg`,
-    sub: `${scrap.length} lượt ghi nhận`,
+    sub: /*#__PURE__*/React.createElement(React.Fragment, null, `${scrap.length} lượt ghi nhận`, " · ", /*#__PURE__*/React.createElement("b", {
+      style: {
+        color: scrapPctColor,
+        fontWeight: 800
+      }
+    }, totalScrapPct !== null ? totalScrapPct.toFixed(2) + "%" : "—"), " phế liệu tương đương"),
     accent: COLORS.red
   }), /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
@@ -7573,10 +7715,14 @@ function AttendanceSection({
       overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-scroll-x",
     style: {
+      overflowY: "auto",
+      maxHeight: "calc(100vh - 380px)",
       overflowX: "auto"
     }
   }, /*#__PURE__*/React.createElement("table", {
+    className: "mes-table",
     style: {
       minWidth: 780,
       borderCollapse: "collapse",
@@ -7652,20 +7798,7 @@ function AttendanceSection({
       textTransform: "uppercase",
       borderBottom: `2px solid ${COLORS.copper}`
     }
-  }, "Xóa"))))), /*#__PURE__*/React.createElement("div", {
-    className: "mes-scroll-x",
-    style: {
-      overflowY: "auto",
-      maxHeight: "calc(100vh - 380px)",
-      overflowX: "auto"
-    }
-  }, /*#__PURE__*/React.createElement("table", {
-    className: "mes-table",
-    style: {
-      minWidth: 780,
-      borderCollapse: "collapse"
-    }
-  }, /*#__PURE__*/React.createElement("tbody", null, displayTeams.map(team => {
+  }, "Xóa"))), /*#__PURE__*/React.createElement("tbody", null, displayTeams.map(team => {
     const members = staff.filter(s => s.team === team);
     if (!members.length) return null;
     const teamSummary = {};
