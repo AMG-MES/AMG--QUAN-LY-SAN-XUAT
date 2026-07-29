@@ -964,6 +964,42 @@ const Factory = _svg(() => [/*#__PURE__*/React.createElement("path", {
     y1: 13,
     x2: 11,
     y2: 21
+  })]),
+  SunIcon = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 12,
+    r: 4.5
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M12 2.5v2.5M12 19v2.5M4.4 4.4l1.8 1.8M17.8 17.8l1.8 1.8M2.5 12h2.5M19 12h2.5M4.4 19.6l1.8-1.8M17.8 6.2l1.8-1.8"
+  })]),
+  MoonIcon = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M20 14.2A8.5 8.5 0 1 1 9.8 4a6.8 6.8 0 0 0 10.2 10.2Z"
+  })]),
+  ClockIcon = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 12,
+    r: 9
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "12,7 12,12 16,14.5"
+  })]),
+  RunFastIcon = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 14.3,
+    cy: 4.2,
+    r: 1.7,
+    fill: "currentColor",
+    stroke: "none"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M11 8.2l2.4 2 3 .6M13.4 10.2l-1.6 3.4 3 3.2-1 4M11.8 13.6l-3.4 1-2 3.6"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 3,
+    d: "M18.5 8.5l2 1M2 15.5l3-1M19 19l3 .8"
   })]);
 /* ===================== DESIGN TOKENS ===================== */
 const COLORS = {
@@ -1093,61 +1129,71 @@ const MACHINE_TYPES = [{
   label: "Máy kéo trung",
   prefix: "KT",
   count: 4,
-  stage: "keo_trung"
+  stage: "keo_trung",
+  color: "#C2652F"
 }, {
   key: "keo_tinh",
   label: "Máy kéo tinh",
   prefix: "KTI",
   count: 64,
-  stage: "keo_tinh"
+  stage: "keo_tinh",
+  color: "#2563EB"
 }, {
   key: "keo_sieu_tinh",
   label: "Máy kéo siêu tinh",
   prefix: "KST",
   count: 19,
-  stage: "keo_sieu_tinh"
+  stage: "keo_sieu_tinh",
+  color: "#0D9488"
 }, {
   key: "ma_thiec",
   label: "Máy mạ thiếc",
   prefix: "MT",
   count: 5,
-  stage: "ma_thiec"
+  stage: "ma_thiec",
+  color: "#7C3AED"
 }, {
   key: "u_nhiet",
   label: "Máy ủ nhiệt",
   prefix: "UN",
   count: 4,
-  stage: "u_nhiet"
+  stage: "u_nhiet",
+  color: "#EA580C"
 }, {
   key: "ben_500",
   label: "Máy bện 500",
   prefix: "B500",
   count: 10,
-  stage: "ben"
+  stage: "ben",
+  color: "#DB2777"
 }, {
   key: "ben_630",
   label: "Máy bện 630",
   prefix: "B630",
   count: 2,
-  stage: "ben"
+  stage: "ben",
+  color: "#0EA5E9"
 }, {
   key: "ben_400",
   label: "Máy bện 400",
   prefix: "B400",
   count: 33,
-  stage: "ben"
+  stage: "ben",
+  color: "#16A34A"
 }, {
   key: "ben_300",
   label: "Máy bện 300",
   prefix: "B300",
   count: 15,
-  stage: "ben"
+  stage: "ben",
+  color: "#CA8A04"
 }, {
   key: "sang_lo",
   label: "Máy sang lô",
   prefix: "SL",
   count: 4,
-  stage: null
+  stage: null,
+  color: "#64748B"
 }];
 const MACHINE_STATUS = {
   running: {
@@ -1180,37 +1226,37 @@ const ATTENDANCE_STATUSES = [{
   key: "caNgay",
   label: "Ca Ngày",
   color: "#2563EB",
-  icon: "☀️"
+  icon: SunIcon
 }, {
   key: "caDem",
   label: "Ca Đêm",
   color: "#7C3AED",
-  icon: "🌙"
+  icon: MoonIcon
 }, {
   key: "nghiPhep",
   label: "Nghỉ phép",
   color: "#15803D",
-  icon: "✅"
+  icon: CheckCircle2
 }, {
   key: "daoCa",
   label: "Đảo Ca",
   color: "#B45309",
-  icon: "🔄"
+  icon: RefreshCw
 }, {
   key: "nghiKhongPhep",
   label: "Nghỉ không phép",
   color: "#DC2626",
-  icon: "❌"
+  icon: X
 }, {
   key: "diLamMuon",
   label: "Đi làm muộn",
   color: "#C2410C",
-  icon: "⏰"
+  icon: ClockIcon
 }, {
   key: "veSom",
   label: "Về sớm",
   color: "#BE185D",
-  icon: "🏃"
+  icon: RunFastIcon
 }];
 const NAV_ITEMS = [{
   key: "dashboard",
@@ -5810,13 +5856,15 @@ function MachineGroup({
     broken: 0
   };
   machines.forEach(m => counts[m.status]++);
+  const groupColor = type.color || COLORS.copper;
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
       marginBottom: 12,
       overflow: "hidden",
-      border: `1.5px solid ${COLORS.copper}40`,
-      borderTop: `4px solid ${COLORS.copper}`
+      border: `1.5px solid ${groupColor}55`,
+      borderTop: `4px solid ${groupColor}`,
+      boxShadow: `0 2px 8px ${groupColor}1a`
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setOpen(o => !o),
@@ -5843,10 +5891,22 @@ function MachineGroup({
   }) : /*#__PURE__*/React.createElement(ChevronRight, {
     size: 16,
     color: COLORS.textFaint
-  }), /*#__PURE__*/React.createElement(Wrench, {
-    size: 15,
-    color: COLORS.copper
   }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 26,
+      height: 26,
+      borderRadius: 8,
+      background: `${groupColor}1f`,
+      border: `1.5px solid ${groupColor}66`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(Wrench, {
+    size: 14,
+    color: groupColor
+  })), /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
     style: {
       fontWeight: 700,
@@ -7047,8 +7107,8 @@ function AttendanceCheckbox({
       width: 26,
       height: 26,
       borderRadius: 7,
-      border: checked ? `1.5px solid ${status.color}` : `1.5px solid ${COLORS.borderLight}`,
-      background: checked ? status.color : "#fff",
+      border: checked ? `1.5px solid ${status.color}` : `1.5px solid ${status.color}55`,
+      background: checked ? status.color : `${status.color}0d`,
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
@@ -7410,7 +7470,14 @@ function AttendanceSection({
       borderBottom: `1px solid ${COLORS.border}`,
       whiteSpace: "nowrap"
     }
-  }, s.icon, " ", s.label)))), /*#__PURE__*/React.createElement("tbody", null, displayTeams.map(team => {
+  }, /*#__PURE__*/React.createElement(s.icon, {
+    size: 13,
+    color: s.color,
+    style: {
+      verticalAlign: "middle",
+      marginRight: 3
+    }
+  }), s.label)))), /*#__PURE__*/React.createElement("tbody", null, displayTeams.map(team => {
     const members = staff.filter(s => s.team === team);
     const ts = {};
     ATTENDANCE_STATUSES.forEach(a => {
@@ -7554,10 +7621,20 @@ function AttendanceSection({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 18,
-      lineHeight: 1.2
+      width: 26,
+      height: 26,
+      margin: "0 auto",
+      borderRadius: 999,
+      background: `${s.color}1f`,
+      border: `1.5px solid ${s.color}77`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
     }
-  }, s.icon), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(s.icon, {
+    size: 14,
+    color: s.color
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       color: s.color,
       fontSize: 10,
@@ -11199,6 +11276,7 @@ function AppInner() {
 function GlobalStyle() {
   return /*#__PURE__*/React.createElement("style", null, `
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+    #root{zoom:1.3;}
     .mes-root{font-family:${FONT_BODY};}
     .mes-display{font-family:${FONT_DISPLAY};}
     .mes-mono{font-family:${FONT_MONO};}
