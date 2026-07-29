@@ -1222,8 +1222,44 @@ const TEAM_STAGE_OPTIONS = {
   "MẠ THIẾC": ["ma_thiec"],
   "BỆN": ["ben"]
 };
-// Danh sách nguyên nhân phế liệu thường gặp — chọn nhanh thay vì phải gõ tay
-const SCRAP_REASONS = ["Đứt dây do lực kéo lớn", "Lệch quy cách / kích thước", "Oxy hoá bề mặt", "Dây bị trầy xước, móp méo", "Mối nối/hàn không đạt", "Lỗi bện xoắn không đều", "Lỗi mạ thiếc không đều", "Nhiệt độ ủ không đạt", "Lỗi do máy móc, thiết bị", "Lỗi thao tác vận hành", "Nguyên liệu đầu vào lỗi", "Rối dây, kẹt máy", "Khác"];
+// Danh sách lỗi chung của xưởng — theo bảng phân loại lỗi chuẩn (chọn nhanh thay vì gõ tay)
+const SCRAP_REASONS = [{
+  name: "Đen dây",
+  cause: "Lỗi máy hết nước, mất điện / Đồng dính dầu, mồ hôi, dị vật",
+  source: "Lỗi máy · Lỗi con người"
+}, {
+  name: "Đứt dây",
+  cause: "Lỗi nguyên vật liệu / Cài đặt sai điều kiện (tốc độ cao, nhiệt,...)",
+  source: "Lỗi vật liệu · Lỗi con người"
+}, {
+  name: "Lỗi nguyên liệu",
+  cause: "Lỗi vật liệu nhà cung cấp (Đông Phương, KCT) - Đứt, rối, đen,...",
+  source: "Lỗi nguyên vật liệu"
+}, {
+  name: "Oxy hóa",
+  cause: "Đồng bị oxy hóa do bảo quản",
+  source: "Lỗi con người · Lỗi máy"
+}, {
+  name: "Rối dây",
+  cause: "Do máy hoặc do thao tác người",
+  source: "Lỗi máy · Lỗi con người"
+}, {
+  name: "Sót lô",
+  cause: "Dây đồng sát bobbin cần cắt bỏ",
+  source: "Lỗi do quy trình"
+}, {
+  name: "Thay đổi model",
+  cause: "Thay model, phế đồng model cũ trong máy / Vệ sinh, bảo dưỡng máy",
+  source: "Lỗi do quy trình"
+}, {
+  name: "QC kiểm tra",
+  cause: "Phế QC lấy mẫu kiểm tra",
+  source: "Lỗi quy trình"
+}, {
+  name: "Lỗi khác",
+  cause: "Các loại lỗi còn lại",
+  source: "Lỗi con người"
+}];
 const ATTENDANCE_STATUSES = [{
   key: "caNgay",
   label: "Ca Ngày",
@@ -6375,23 +6411,24 @@ function ScrapAddModal({
       marginBottom: 8
     }
   }, SCRAP_REASONS.map(r => /*#__PURE__*/React.createElement("button", {
-    key: r,
+    key: r.name,
     type: "button",
+    title: `${r.cause} (${r.source})`,
     onClick: () => setForm(f => ({
       ...f,
-      reason: r
+      reason: `${r.name} — ${r.cause}`
     })),
     style: {
       fontSize: 11.5,
       padding: "5px 10px",
       borderRadius: 999,
       cursor: "pointer",
-      border: form.reason === r ? `1.5px solid ${COLORS.copper}` : `1.5px solid ${COLORS.borderLight}`,
-      background: form.reason === r ? `${COLORS.copper}20` : COLORS.bgPanel2,
-      color: form.reason === r ? COLORS.copperBright : COLORS.textDim,
-      fontWeight: form.reason === r ? 700 : 500
+      border: form.reason.startsWith(r.name) ? `1.5px solid ${COLORS.copper}` : `1.5px solid ${COLORS.borderLight}`,
+      background: form.reason.startsWith(r.name) ? `${COLORS.copper}20` : COLORS.bgPanel2,
+      color: form.reason.startsWith(r.name) ? COLORS.copperBright : COLORS.textDim,
+      fontWeight: form.reason.startsWith(r.name) ? 700 : 500
     }
-  }, r))), /*#__PURE__*/React.createElement("textarea", {
+  }, r.name))), /*#__PURE__*/React.createElement("textarea", {
     className: "mes-input",
     rows: 2,
     value: form.reason,
