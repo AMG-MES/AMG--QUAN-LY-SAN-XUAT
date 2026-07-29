@@ -3971,7 +3971,7 @@ function LoginScreen({
     style: {
       position: "absolute",
       inset: 0,
-      background: `linear-gradient(150deg, rgba(8,34,68,.72) 0%, rgba(10,42,82,.58) 45%, rgba(10,42,82,.4) 100%), radial-gradient(circle at 4% 92%, rgba(255,200,120,.5), transparent 32%)`
+      background: `linear-gradient(180deg, rgba(205,228,250,.55) 0%, rgba(235,245,252,.28) 22%, rgba(10,30,60,.18) 55%, rgba(8,28,56,.4) 100%), radial-gradient(circle at 4% 92%, rgba(255,200,120,.45), transparent 32%)`
     }
   }),
   /* Header thương hiệu góc trên trái */
@@ -3998,56 +3998,66 @@ function LoginScreen({
     style: {
       background: `linear-gradient(120deg, #E31E24, #A80D16)`,
       borderRadius: 10,
-      padding: "10px 26px 10px 18px",
+      padding: "10px 30px 10px 18px",
       boxShadow: "0 8px 24px rgba(0,0,0,.35)",
-      clipPath: "polygon(0 0, 100% 0, 92% 100%, 0% 100%)"
+      clipPath: "polygon(0 0, 100% 0, 90% 100%, 0% 100%)"
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
     style: {
-      fontSize: 21,
+      fontSize: 23,
       fontWeight: 800,
+      fontStyle: "italic",
       color: "#fff",
       letterSpacing: "-.01em",
       lineHeight: 1.1
     }
   }, "AOMAGA"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 10.5,
+      fontSize: 10,
       fontWeight: 700,
       color: "rgba(255,255,255,.92)",
-      letterSpacing: ".1em"
+      letterSpacing: ".08em",
+      whiteSpace: "nowrap"
     }
-  }, "VIỆT NAM")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }, "— VIỆT NAM —")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 12.5,
-      fontWeight: 700,
-      color: "#DCE9FA",
+      fontSize: 13,
+      fontWeight: 800,
+      color: "#0F2148",
       letterSpacing: ".08em",
       textTransform: "uppercase",
-      marginBottom: 3
+      marginBottom: 4
     }
   }, "Hệ thống quản lý sản xuất MES"), /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
     style: {
-      fontSize: 30,
+      fontSize: 38,
       fontWeight: 800,
-      lineHeight: 1.15
+      lineHeight: 1.1
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      color: "#fff"
+      color: "#E31E24"
     }
   }, "AOMAGA "), /*#__PURE__*/React.createElement("span", {
     style: {
-      color: "#F0362E"
+      color: "#0F2148"
     }
   }, "VIỆT NAM")), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 13.5,
-      color: "rgba(255,255,255,.85)",
+      width: 130,
+      height: 3,
+      background: "#E31E24",
+      borderRadius: 2,
+      margin: "6px 0 8px"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      color: "#1F3A63",
       fontStyle: "italic",
-      marginTop: 3
+      fontWeight: 500
     }
   }, "Hiệu quả hôm nay – Bền vững ngày mai"))),
   /* Huy hiệu chứng nhận góc trên phải */
@@ -4107,7 +4117,7 @@ function LoginScreen({
       borderRadius: 22,
       border: `2.5px solid ${COLORS.copper}`,
       boxShadow: "0 24px 64px rgba(0,0,0,.35)",
-      padding: 28
+      padding: 24
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4342,21 +4352,26 @@ function LoginScreen({
       textAlign: "left"
     }
   }, q.label)))))),
-  /* Dải tính năng góc dưới trái, nền navy đậm */
+  /* Dải tính năng + tagline góc dưới trái, chung 1 khung nền navy đậm */
   /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       left: 28,
-      right: 420,
-      bottom: 64,
+      maxWidth: 760,
+      bottom: 20,
+      background: "rgba(8,28,56,.88)",
+      border: "1px solid rgba(120,170,230,.35)",
+      borderRadius: 16,
+      backdropFilter: "blur(3px)",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       display: "flex",
       justifyContent: "space-between",
-      gap: 16,
+      gap: 18,
       flexWrap: "wrap",
-      background: "rgba(8,34,68,.82)",
-      borderRadius: 16,
-      padding: "16px 24px",
-      backdropFilter: "blur(2px)"
+      padding: "18px 26px 14px"
     }
   }, FEATURES.map(f => /*#__PURE__*/React.createElement("div", {
     key: f.title,
@@ -4365,50 +4380,48 @@ function LoginScreen({
       flexDirection: "column",
       alignItems: "center",
       textAlign: "center",
-      gap: 6,
-      minWidth: 100
+      gap: 8,
+      minWidth: 108
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 34,
-      height: 34,
+      width: 46,
+      height: 46,
       borderRadius: 999,
-      background: `${f.color}26`,
-      border: `1.5px solid ${f.color}77`,
+      background: `${f.color}22`,
+      border: `1.5px solid ${f.color}`,
+      boxShadow: `0 0 16px 2px ${f.color}70`,
       display: "flex",
       alignItems: "center",
       justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement(f.icon, {
-    size: 16,
+    size: 21,
     color: f.color
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11.5,
+      fontSize: 12.5,
       fontWeight: 800,
       color: "#fff",
       letterSpacing: ".03em"
     }
   }, f.title), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 10,
-      color: "rgba(255,255,255,.65)"
+      fontSize: 10.5,
+      color: "rgba(255,255,255,.68)"
     }
-  }, f.sub)))),
-  /* Tagline chính giữa dưới cùng */
-  /*#__PURE__*/React.createElement("div", {
+  }, f.sub)))), /*#__PURE__*/React.createElement("div", {
     style: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      bottom: 16,
       textAlign: "center",
       fontSize: 12,
       fontWeight: 700,
-      color: "rgba(255,255,255,.8)",
-      letterSpacing: ".25em"
+      color: "rgba(255,255,255,.85)",
+      letterSpacing: ".3em",
+      borderTop: "1px solid rgba(120,170,230,.3)",
+      padding: "9px 0",
+      background: "rgba(255,255,255,.03)"
     }
-  }, "SMART FACTORY – SMART MANAGEMENT"),
+  }, "SMART FACTORY – SMART MANAGEMENT")),
   /* Copyright góc dưới phải */
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -11690,6 +11703,7 @@ function GlobalStyle() {
   return /*#__PURE__*/React.createElement("style", null, `
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
     #root{zoom:1.3;}
+    .mes-login-shell{zoom:1;}
     .mes-root{font-family:${FONT_BODY};}
     .mes-display{font-family:${FONT_DISPLAY};}
     .mes-mono{font-family:${FONT_MONO};}
