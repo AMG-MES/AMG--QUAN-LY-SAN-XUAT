@@ -3879,100 +3879,234 @@ function LoginScreen({
     setUsername(u);
     setPassword(p);
   }
+  const QUICK_LOGINS = [{
+    label: "Tổ Kéo",
+    u: "to.keo",
+    p: "keo@123",
+    icon: StageIconDrawing,
+    color: "#D5203A"
+  }, {
+    label: "Tổ Ủ Nhiệt",
+    u: "to.unhiet",
+    p: "unhiet@123",
+    icon: StageIconHeat,
+    color: "#E8890C"
+  }, {
+    label: "Tổ Mạ Thiếc",
+    u: "to.mathiec",
+    p: "mathiec@123",
+    icon: StageIconPlate,
+    color: "#16A34A"
+  }, {
+    label: "Tổ Bện",
+    u: "to.ben",
+    p: "ben@123",
+    icon: StageIconTwist,
+    color: "#0642B3"
+  }, {
+    label: "Tổ Bọc",
+    u: "to.boc",
+    p: "boc@123",
+    icon: CircleDot,
+    color: "#C026D3"
+  }, {
+    label: "Tổ Cơ Điện",
+    u: "to.codien",
+    p: "codien@123",
+    icon: Cog,
+    color: "#0E7DA8"
+  }];
+  const FEATURES = [{
+    icon: ShieldCheck,
+    title: "AN TOÀN",
+    sub: "Bảo mật nhiều lớp",
+    color: "#22C55E"
+  }, {
+    icon: TrendingUp,
+    title: "HIỆU QUẢ",
+    sub: "Quản lý thời gian thực",
+    color: "#F59E0B"
+  }, {
+    icon: CircleDot,
+    title: "CHÍNH XÁC",
+    sub: "Dữ liệu tin cậy",
+    color: "#A855F7"
+  }, {
+    icon: RefreshCw,
+    title: "KẾT NỐI",
+    sub: "Liên thông toàn hệ thống",
+    color: "#22C55E"
+  }, {
+    icon: Sparkles,
+    title: "PHÁT TRIỂN BỀN VỮNG",
+    sub: "Vì một tương lai xanh",
+    color: "#22C55E"
+  }];
+  const CERTS = [{
+    code: "ISO 9001",
+    label: "QUALITY"
+  }, {
+    code: "ISO 14001",
+    label: "ENVIRONMENT"
+  }, {
+    code: "ISO 45001",
+    label: "SAFETY"
+  }, {
+    code: "UL",
+    label: "CERTIFIED"
+  }];
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-root mes-login-shell",
     style: {
-      display: "flex",
       minHeight: "100vh",
       position: "relative",
       overflow: "hidden",
-      background: COLORS.bg
-    }
-  }, /*#__PURE__*/React.createElement(GlobalStyle, null), /*#__PURE__*/React.createElement("div", {
-    className: "mes-login-image-panel",
-    style: {
-      flex: "5.7",
-      position: "relative",
-      background: `${COLORS.copperDark} url(${FACTORY_PHOTO_DATA_URI})`,
+      background: `#0A2A52 url(${FACTORY_PHOTO_DATA_URI})`,
       backgroundSize: "cover",
-      backgroundPosition: "center",
-      filter: "brightness(0.92) saturate(1.15) contrast(1.08)"
+      backgroundPosition: "center"
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(GlobalStyle, null),
+  /* Lớp phủ xanh navy thương hiệu + ánh nắng góc dưới trái */
+  /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       inset: 0,
-      background: `linear-gradient(200deg, rgba(11,14,19,.15) 0%, rgba(11,14,19,.28) 55%, rgba(11,14,19,.78) 100%)`
+      background: `linear-gradient(150deg, rgba(8,34,68,.72) 0%, rgba(10,42,82,.58) 45%, rgba(10,42,82,.4) 100%), radial-gradient(circle at 4% 92%, rgba(255,200,120,.5), transparent 32%)`
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }),
+  /* Header thương hiệu góc trên trái */
+  /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
-      left: 0,
-      right: 0,
-      bottom: 0,
-      padding: "0 48px 48px"
+      top: 28,
+      left: 28,
+      right: 28,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 18,
+      flexWrap: "wrap"
     }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: LOGO_DATA_URI,
-    alt: "Logo",
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 56,
-      height: 56,
-      borderRadius: 12,
-      objectFit: "contain",
-      background: "#fff",
-      marginBottom: 18,
-      boxShadow: "0 8px 28px rgba(0,0,0,.35)"
+      display: "flex",
+      alignItems: "center",
+      gap: 18,
+      flexWrap: "wrap"
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: `linear-gradient(120deg, #E31E24, #A80D16)`,
+      borderRadius: 10,
+      padding: "10px 26px 10px 18px",
+      boxShadow: "0 8px 24px rgba(0,0,0,.35)",
+      clipPath: "polygon(0 0, 100% 0, 92% 100%, 0% 100%)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-display",
+    style: {
+      fontSize: 21,
+      fontWeight: 800,
+      color: "#fff",
+      letterSpacing: "-.01em",
+      lineHeight: 1.1
+    }
+  }, "AOMAGA"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      color: "rgba(255,255,255,.92)",
+      letterSpacing: ".1em"
+    }
+  }, "VIỆT NAM")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 700,
+      color: "#DCE9FA",
+      letterSpacing: ".08em",
+      textTransform: "uppercase",
+      marginBottom: 3
+    }
+  }, "Hệ thống quản lý sản xuất MES"), /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
     style: {
       fontSize: 30,
       fontWeight: 800,
-      color: "#fff",
-      lineHeight: 1.15,
-      marginBottom: 8
+      lineHeight: 1.15
     }
-  }, "Hệ thống quản lý sản xuất"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 15,
-      color: "rgba(255,255,255,.75)",
-      marginBottom: 14
+      color: "#fff"
     }
-  }, "Xưởng Đồng · MES — theo dõi đơn hàng, sản lượng và chất lượng theo thời gian thực"), /*#__PURE__*/React.createElement("div", {
+  }, "AOMAGA "), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 12.5,
-      color: "rgba(255,255,255,.5)",
-      letterSpacing: ".03em",
-      textTransform: "uppercase",
-      fontWeight: 600
+      color: "#F0362E"
     }
-  }, COMPANY_FULL_NAME))), /*#__PURE__*/React.createElement("div", {
-    className: "mes-login-form-panel",
+  }, "VIỆT NAM")), /*#__PURE__*/React.createElement("div", {
     style: {
-      flex: 1,
-      minWidth: 400,
+      fontSize: 13.5,
+      color: "rgba(255,255,255,.85)",
+      fontStyle: "italic",
+      marginTop: 3
+    }
+  }, "Hiệu quả hôm nay – Bền vững ngày mai"))),
+  /* Huy hiệu chứng nhận góc trên phải */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
       display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 20,
-      position: "relative"
+      gap: 14,
+      flexWrap: "wrap"
+    }
+  }, CERTS.map(c => /*#__PURE__*/React.createElement("div", {
+    key: c.code,
+    style: {
+      width: 62,
+      textAlign: "center"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      width: 52,
+      height: 52,
+      borderRadius: 999,
+      margin: "0 auto 4px",
+      background: "linear-gradient(145deg,#1E3A66,#0A2A52)",
+      border: "2px solid #C9A227",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#FFD766",
+      fontSize: 9,
+      fontWeight: 800,
+      lineHeight: 1.1,
+      boxShadow: "0 3px 10px rgba(0,0,0,.35)"
+    }
+  }, c.code), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 8.5,
+      fontWeight: 700,
+      color: "rgba(255,255,255,.85)",
+      letterSpacing: ".04em"
+    }
+  }, c.label))))),
+  /* Card đăng nhập nổi bên phải, căn giữa theo chiều dọc */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
       position: "absolute",
       inset: 0,
-      opacity: 0.5,
-      pointerEvents: "none",
-      background: `radial-gradient(circle at 20% 15%, ${COLORS.copper}1a, transparent 45%), radial-gradient(circle at 85% 80%, ${COLORS.blue}14, transparent 40%)`
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      padding: "20px 4vw"
     }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "mes-card mes-fade-in",
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-fade-in",
     style: {
       width: "100%",
       maxWidth: 420,
-      position: "relative",
-      zIndex: 1,
+      background: "rgba(255,255,255,.98)",
+      borderRadius: 22,
+      border: `2.5px solid ${COLORS.copper}`,
+      boxShadow: "0 24px 64px rgba(0,0,0,.35)",
       padding: 28
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -3986,8 +4120,8 @@ function LoginScreen({
     src: LOGO_DATA_URI,
     alt: "Logo",
     style: {
-      width: 44,
-      height: 44,
+      width: 46,
+      height: 46,
       borderRadius: 10,
       objectFit: "contain",
       background: "#fff",
@@ -3996,8 +4130,8 @@ function LoginScreen({
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
     style: {
-      fontSize: 15,
-      fontWeight: 700,
+      fontSize: 16,
+      fontWeight: 800,
       lineHeight: 1.15
     }
   }, COMPANY_NAME), /*#__PURE__*/React.createElement("div", {
@@ -4015,7 +4149,7 @@ function LoginScreen({
     style: {
       height: 1,
       background: COLORS.border,
-      margin: "18px 0"
+      margin: "16px 0"
     }
   }), storageError && /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4052,13 +4186,22 @@ function LoginScreen({
   }), /*#__PURE__*/React.createElement("input", {
     className: "mes-input",
     style: {
-      paddingLeft: 32
+      paddingLeft: 32,
+      paddingRight: username ? 32 : 11
     },
     value: username,
     onChange: e => setUsername(e.target.value),
     onKeyDown: handleKeyDown,
     placeholder: "ví dụ: admin",
     autoFocus: true
+  }), username && /*#__PURE__*/React.createElement(CheckCircle2, {
+    size: 15,
+    color: COLORS.green,
+    style: {
+      position: "absolute",
+      right: 10,
+      top: 10
+    }
   }))), /*#__PURE__*/React.createElement(Field, {
     label: "Mật khẩu"
   }, /*#__PURE__*/React.createElement("div", {
@@ -4114,91 +4257,168 @@ function LoginScreen({
     style: {
       width: "100%",
       justifyContent: "center",
-      padding: "10px 0",
-      fontSize: 14
+      padding: "12px 0",
+      fontSize: 15,
+      borderRadius: 12,
+      background: `linear-gradient(90deg, #F1291E, #C81118)`,
+      boxShadow: "0 8px 20px rgba(200,17,24,.4)"
     }
   }, busy ? /*#__PURE__*/React.createElement(Loader2, {
-    size: 15,
+    size: 16,
     className: "pulse-dot"
-  }) : /*#__PURE__*/React.createElement(ArrowRight, {
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ChevronRight, {
     size: 15
-  }), " Đăng nhập")), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(ChevronRight, {
+    size: 15,
     style: {
-      marginTop: 18,
-      fontSize: 11.5,
-      color: COLORS.textFaint
+      marginLeft: -10
+    }
+  })), " Đăng nhập")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      margin: "18px 0 12px"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 6,
-      fontWeight: 600,
-      color: COLORS.textDim
+      flex: 1,
+      height: 1,
+      background: COLORS.border
     }
-  }, "Tài khoản demo (bấm để điền nhanh):"), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      color: COLORS.textFaint,
+      letterSpacing: ".05em",
+      whiteSpace: "nowrap"
+    }
+  }, "HOẶC ĐĂNG NHẬP NHANH"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 1,
+      background: COLORS.border
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: 8
+    }
+  }, QUICK_LOGINS.map(q => /*#__PURE__*/React.createElement("button", {
+    key: q.label,
+    type: "button",
+    onClick: () => quickFill(q.u, q.p),
     style: {
       display: "flex",
+      alignItems: "center",
+      gap: 7,
+      padding: "8px 8px",
+      borderRadius: 10,
+      border: `1.5px solid ${q.color}55`,
+      background: `${q.color}12`,
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 26,
+      height: 26,
+      flexShrink: 0,
+      borderRadius: 7,
+      background: q.color,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement(q.icon, {
+    size: 14,
+    color: "#fff"
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#1F2937",
+      textAlign: "left"
+    }
+  }, q.label)))))),
+  /* Dải tính năng góc dưới trái, nền navy đậm */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 28,
+      right: 420,
+      bottom: 64,
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 16,
       flexWrap: "wrap",
-      gap: 6
+      background: "rgba(8,34,68,.82)",
+      borderRadius: 16,
+      padding: "16px 24px",
+      backdropFilter: "blur(2px)"
     }
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => quickFill("admin", "admin123"),
-    className: "mes-btn mes-btn-ghost",
+  }, FEATURES.map(f => /*#__PURE__*/React.createElement("div", {
+    key: f.title,
     style: {
-      fontSize: 11,
-      padding: "4px 8px",
-      borderColor: COLORS.copper,
-      color: COLORS.copperBright
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      textAlign: "center",
+      gap: 6,
+      minWidth: 100
     }
-  }, "admin"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => quickFill("to.keo", "keo@123"),
-    className: "mes-btn mes-btn-ghost",
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      padding: "4px 8px"
+      width: 34,
+      height: 34,
+      borderRadius: 999,
+      background: `${f.color}26`,
+      border: `1.5px solid ${f.color}77`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
     }
-  }, "Tổ Kéo"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => quickFill("to.unhiet", "unhiet@123"),
-    className: "mes-btn mes-btn-ghost",
+  }, /*#__PURE__*/React.createElement(f.icon, {
+    size: 16,
+    color: f.color
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      padding: "4px 8px"
+      fontSize: 11.5,
+      fontWeight: 800,
+      color: "#fff",
+      letterSpacing: ".03em"
     }
-  }, "Tổ Ủ Nhiệt"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => quickFill("to.mathiec", "mathiec@123"),
-    className: "mes-btn mes-btn-ghost",
+  }, f.title), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      padding: "4px 8px"
+      fontSize: 10,
+      color: "rgba(255,255,255,.65)"
     }
-  }, "Tổ Mạ Thiếc"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => quickFill("to.ben", "ben@123"),
-    className: "mes-btn mes-btn-ghost",
+  }, f.sub)))),
+  /* Tagline chính giữa dưới cùng */
+  /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11,
-      padding: "4px 8px"
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 16,
+      textAlign: "center",
+      fontSize: 12,
+      fontWeight: 700,
+      color: "rgba(255,255,255,.8)",
+      letterSpacing: ".25em"
     }
-  }, "Tổ Bện"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => quickFill("to.boc", "boc@123"),
-    className: "mes-btn mes-btn-ghost",
+  }, "SMART FACTORY – SMART MANAGEMENT"),
+  /* Copyright góc dưới phải */
+  /*#__PURE__*/React.createElement("div", {
     style: {
+      position: "absolute",
+      right: 28,
+      bottom: 16,
       fontSize: 11,
-      padding: "4px 8px"
+      color: "rgba(255,255,255,.7)"
     }
-  }, "Tổ Bọc"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => quickFill("to.codien", "codien@123"),
-    className: "mes-btn mes-btn-ghost",
-    style: {
-      fontSize: 11,
-      padding: "4px 8px"
-    }
-  }, "Tổ Cơ Điện"))))));
+  }, `© ${new Date().getFullYear()} AOMAGA VIỆT NAM. All rights reserved.`));
 }
 
 /* ===================== LAYOUT: SIDEBAR + TOPBAR ===================== */
