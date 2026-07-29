@@ -1,9 +1,9 @@
 {
-  "name":"Xưởng Đồng · MES","short_name":"MES",
+  "name":"AOMAGA VIỆT NAM · MES","short_name":"AOMAGA MES",
   "start_url":"./index.html","display":"standalone",
-  "background_color":"#0D1117","theme_color":"#C96A20",
+  "background_color":"#EAEFF5","theme_color":"#C8101A",
   "icons":[
-    {"src":"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23C96A20'/><text y='155' x='20' font-size='150'>🏭</text></svg>","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"},
-    {"src":"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23C96A20'/><text y='420' x='50' font-size='400'>🏭</text></svg>","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}
+    {"src":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%23C8101A'/%3E%3Cpath d='M192 192V128L128 192Z' fill='%23A80D16'/%3E%3Ctext x='96' y='140' font-family='Arial, Helvetica, sans-serif' font-weight='800' font-size='118' fill='%23FFFFFF' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"},
+    {"src":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23C8101A'/%3E%3Cpath d='M512 512V341L341 512Z' fill='%23A80D16'/%3E%3Ctext x='256' y='373' font-family='Arial, Helvetica, sans-serif' font-weight='800' font-size='315' fill='%23FFFFFF' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}
   ]
 }

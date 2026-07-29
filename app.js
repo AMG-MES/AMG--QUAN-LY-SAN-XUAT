@@ -278,70 +278,693 @@ const signInWithEmailAndPassword = (a, e, p) => a ? a.signInWithEmailAndPassword
 const signOut = a => a ? a.signOut() : Promise.resolve();
 const createUserWithEmailAndPassword = (a, e, p) => a ? a.createUserWithEmailAndPassword(e, p) : Promise.reject(new Error('no auth'));
 const onAuthStateChanged = (a, cb) => a ? a.onAuthStateChanged(cb) : () => {};
-const _ic = ch => ({
+/* ===================== BỘ ICON SVG (thay thế emoji) =====================
+   Bộ icon line-style đồng nhất (viewBox 24x24, stroke=currentColor) theo
+   phong cách tối giản/chuyên nghiệp. Giữ nguyên API cũ ({size,color,style,...})
+   nên không cần sửa bất kỳ chỗ gọi <Icon/> nào khác trong file. */
+const _svg = draw => ({
   size = 16,
   color,
   style,
+  strokeWidth = 1.9,
   ...p
-}) => /*#__PURE__*/React.createElement("span", {
+}) => /*#__PURE__*/React.createElement("svg", {
+  width: size,
+  height: size,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: color || "currentColor",
+  strokeWidth,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
   style: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: size,
-    height: size,
-    color,
     flexShrink: 0,
+    display: "inline-block",
+    verticalAlign: "middle",
     ...style
   },
   ...p
-}, ch);
-const Factory = _ic('🏭'),
-  LayoutDashboard = _ic('📊'),
-  ClipboardList = _ic('📋'),
-  Cog = _ic('⚙️'),
-  Users = _ic('👥'),
-  BarChart3 = _ic('📈'),
-  ShieldCheck = _ic('🛡️'),
-  LogOut = _ic('🚪'),
-  Plus = _ic('+'),
-  Pencil = _ic('✏️'),
-  Trash2 = _ic('🗑️'),
-  Search = _ic('🔍'),
-  ChevronDown = _ic('▾'),
-  ChevronRight = _ic('▸'),
-  AlertTriangle = _ic('⚠️'),
-  CheckCircle2 = _ic('✅'),
-  History = _ic('🕐'),
-  Lock = _ic('🔒'),
-  UserIcon = _ic('👤'),
-  X = _ic('✕'),
-  Menu = _ic('☰'),
-  Save = _ic('💾'),
-  TrendingUp = _ic('📈'),
-  PackageSearch = _ic('🔍'),
-  Wrench = _ic('🔧'),
-  Gauge = _ic('⚡'),
-  Recycle = _ic('♻️'),
-  CalendarDays = _ic('📅'),
-  RefreshCw = _ic('🔄'),
-  Eye = _ic('👁'),
-  EyeOff = _ic('🙈'),
-  ArrowRight = _ic('→'),
-  Filter = _ic('▼'),
-  AlertOctagon = _ic('⛔'),
-  CircleDot = _ic('●'),
-  ClipboardCheck = _ic('✅'),
-  Hammer = _ic('🔨'),
-  FlaskConical = _ic('⚗️'),
-  Sparkles = _ic('✨'),
-  Boxes = _ic('📦'),
-  ChevronUp = _ic('▴'),
-  Loader2 = _ic('⏳'),
-  Info = _ic('ℹ️'),
-  Upload = _ic('⬆️'),
-  Download = _ic('⬇️'),
-  FileSpreadsheet = _ic('📊');
+}, draw());
+const Factory = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M3 21V11l5 3.3V11l5 3.3V11l5 3.3V21H3Z"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 2,
+    y1: 21,
+    x2: 19,
+    y2: 21
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 16,
+    y1: 4,
+    x2: 16,
+    y2: 8.5
+  })]),
+  LayoutDashboard = _svg(() => [/*#__PURE__*/React.createElement("rect", {
+    key: 1,
+    x: 3,
+    y: 3,
+    width: 7,
+    height: 9,
+    rx: 1.4
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 2,
+    x: 14,
+    y: 3,
+    width: 7,
+    height: 5,
+    rx: 1.4
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 3,
+    x: 14,
+    y: 12,
+    width: 7,
+    height: 9,
+    rx: 1.4
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 4,
+    x: 3,
+    y: 16,
+    width: 7,
+    height: 5,
+    rx: 1.4
+  })]),
+  ClipboardList = _svg(() => [/*#__PURE__*/React.createElement("rect", {
+    key: 1,
+    x: 5,
+    y: 4,
+    width: 14,
+    height: 17,
+    rx: 2
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 2,
+    x: 9,
+    y: 2,
+    width: 6,
+    height: 4,
+    rx: 1
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 8,
+    y1: 10.5,
+    x2: 16,
+    y2: 10.5
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 4,
+    x1: 8,
+    y1: 14,
+    x2: 16,
+    y2: 14
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 5,
+    x1: 8,
+    y1: 17.5,
+    x2: 13,
+    y2: 17.5
+  })]),
+  Cog = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 12,
+    r: 3
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"
+  })]),
+  Users = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 8.2,
+    cy: 8.5,
+    r: 3
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M2.2 21v-1a6 6 0 0 1 12 0v1"
+  }), /*#__PURE__*/React.createElement("circle", {
+    key: 3,
+    cx: 17,
+    cy: 8,
+    r: 2.3
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 4,
+    d: "M14.3 21v-1a5 5 0 0 1 7.5-4.3"
+  })]),
+  BarChart3 = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 4,
+    y1: 20,
+    x2: 20,
+    y2: 20
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 2,
+    x: 6,
+    y: 12,
+    width: 3,
+    height: 8
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 3,
+    x: 11,
+    y: 7,
+    width: 3,
+    height: 13
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 4,
+    x: 16,
+    y: 4,
+    width: 3,
+    height: 16
+  })]),
+  ShieldCheck = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Z"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "8.5,12 11,14.5 15.5,9.5"
+  })]),
+  LogOut = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "15,17 20,12 15,7"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 20,
+    y1: 12,
+    x2: 9,
+    y2: 12
+  })]),
+  Plus = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 12,
+    y1: 4,
+    x2: 12,
+    y2: 20
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 4,
+    y1: 12,
+    x2: 20,
+    y2: 12
+  })]),
+  Pencil = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 14,
+    y1: 7,
+    x2: 17.5,
+    y2: 10.5
+  })]),
+  Trash2 = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 4,
+    y1: 7,
+    x2: 20,
+    y2: 7
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M6 7V4h12v3"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 3,
+    d: "M6 7l1 13h10l1-13"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 4,
+    x1: 10,
+    y1: 11,
+    x2: 10,
+    y2: 17
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 5,
+    x1: 14,
+    y1: 11,
+    x2: 14,
+    y2: 17
+  })]),
+  Search = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 10.5,
+    cy: 10.5,
+    r: 6.5
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 20,
+    y1: 20,
+    x2: 15.4,
+    y2: 15.4
+  })]),
+  ChevronDown = _svg(() => [/*#__PURE__*/React.createElement("polyline", {
+    key: 1,
+    points: "5,8.5 12,15.5 19,8.5"
+  })]),
+  ChevronRight = _svg(() => [/*#__PURE__*/React.createElement("polyline", {
+    key: 1,
+    points: "9,5 16,12 9,19"
+  })]),
+  AlertTriangle = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M12 3 2 20h20L12 3Z"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 12,
+    y1: 10,
+    x2: 12,
+    y2: 15
+  }), /*#__PURE__*/React.createElement("circle", {
+    key: 3,
+    cx: 12,
+    cy: 17.7,
+    r: 0.9,
+    fill: "currentColor",
+    stroke: "none"
+  })]),
+  CheckCircle2 = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 12,
+    r: 9
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "8,12.5 11,15.5 16,9"
+  })]),
+  History = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M3 12a9 9 0 1 0 3-6.7"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "3,4 3,9 8,9"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 3,
+    points: "12,8 12,12.5 15.5,14.5"
+  })]),
+  Lock = _svg(() => [/*#__PURE__*/React.createElement("rect", {
+    key: 1,
+    x: 5,
+    y: 11,
+    width: 14,
+    height: 9,
+    rx: 2
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M8 11V7a4 4 0 0 1 8 0v4"
+  })]),
+  UserIcon = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 8,
+    r: 4
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M4 21v-1a8 8 0 0 1 16 0v1"
+  })]),
+  X = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 6,
+    y1: 6,
+    x2: 18,
+    y2: 18
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 18,
+    y1: 6,
+    x2: 6,
+    y2: 18
+  })]),
+  Menu = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 4,
+    y1: 6,
+    x2: 20,
+    y2: 6
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 4,
+    y1: 12,
+    x2: 20,
+    y2: 12
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 4,
+    y1: 18,
+    x2: 20,
+    y2: 18
+  })]),
+  Save = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M5 4h11l3 3v13H5V4Z"
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 2,
+    x: 8,
+    y: 4,
+    width: 7,
+    height: 5
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 3,
+    x: 8,
+    y: 14,
+    width: 8,
+    height: 6
+  })]),
+  TrendingUp = _svg(() => [/*#__PURE__*/React.createElement("polyline", {
+    key: 1,
+    points: "3,17 9,11 13,15 21,6"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "15,6 21,6 21,12"
+  })]),
+  PackageSearch = _svg(() => [/*#__PURE__*/React.createElement("rect", {
+    key: 1,
+    x: 3,
+    y: 7,
+    width: 12,
+    height: 12,
+    rx: 1.4
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M6 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+  }), /*#__PURE__*/React.createElement("circle", {
+    key: 3,
+    cx: 18,
+    cy: 17,
+    r: 3
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 4,
+    x1: 20.2,
+    y1: 19.2,
+    x2: 22,
+    y2: 21
+  })]),
+  Wrench = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8Z"
+  })]),
+  Gauge = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 13,
+    r: 8
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 12,
+    y1: 13,
+    x2: 16,
+    y2: 9
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 7,
+    y1: 6,
+    x2: 8.3,
+    y2: 7.3
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 4,
+    x1: 12,
+    y1: 4,
+    x2: 12,
+    y2: 5.5
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 5,
+    x1: 17,
+    y1: 6,
+    x2: 15.7,
+    y2: 7.3
+  })]),
+  Recycle = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M4 12a8 8 0 0 1 8-8h4"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "14,1 16,4 13,6"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 3,
+    d: "M20 12a8 8 0 0 1-8 8h-4"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 4,
+    points: "10,23 8,20 11,18"
+  })]),
+  CalendarDays = _svg(() => [/*#__PURE__*/React.createElement("rect", {
+    key: 1,
+    x: 3,
+    y: 5,
+    width: 18,
+    height: 16,
+    rx: 2
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 3,
+    y1: 10,
+    x2: 21,
+    y2: 10
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 8,
+    y1: 3,
+    x2: 8,
+    y2: 7
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 4,
+    x1: 16,
+    y1: 3,
+    x2: 16,
+    y2: 7
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 5,
+    x1: 7,
+    y1: 14,
+    x2: 7.01,
+    y2: 14
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 6,
+    x1: 12,
+    y1: 14,
+    x2: 12.01,
+    y2: 14
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 7,
+    x1: 17,
+    y1: 14,
+    x2: 17.01,
+    y2: 14
+  })]),
+  RefreshCw = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M4 12a8 8 0 0 1 14.6-4.6"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "19,3 19,8 14,8"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 3,
+    d: "M20 12a8 8 0 0 1-14.6 4.6"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 4,
+    points: "5,21 5,16 10,16"
+  })]),
+  Eye = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"
+  }), /*#__PURE__*/React.createElement("circle", {
+    key: 2,
+    cx: 12,
+    cy: 12,
+    r: 3
+  })]),
+  EyeOff = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M3 3l18 18"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M10.6 5.2A10.7 10.7 0 0 1 12 5c6 0 10 7 10 7a17.9 17.9 0 0 1-3.2 4.1M6.5 6.6A18 18 0 0 0 2 12s4 7 10 7a10.4 10.4 0 0 0 4.6-1"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 3,
+    d: "M9.5 9.7a3 3 0 0 0 4.2 4.2"
+  })]),
+  ArrowRight = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 4,
+    y1: 12,
+    x2: 20,
+    y2: 12
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "14,6 20,12 14,18"
+  })]),
+  Filter = _svg(() => [/*#__PURE__*/React.createElement("polygon", {
+    key: 1,
+    points: "4,4 20,4 14,12.5 14,19 10,21 10,12.5"
+  })]),
+  AlertOctagon = _svg(() => [/*#__PURE__*/React.createElement("polygon", {
+    key: 1,
+    points: "7.5,2 16.5,2 22,7.5 22,16.5 16.5,22 7.5,22 2,16.5 2,7.5"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 12,
+    y1: 8,
+    x2: 12,
+    y2: 13
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 12,
+    y1: 16.5,
+    x2: 12,
+    y2: 16.51
+  })]),
+  CircleDot = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 12,
+    r: 9
+  }), /*#__PURE__*/React.createElement("circle", {
+    key: 2,
+    cx: 12,
+    cy: 12,
+    r: 2.6,
+    fill: "currentColor",
+    stroke: "none"
+  })]),
+  ClipboardCheck = _svg(() => [/*#__PURE__*/React.createElement("rect", {
+    key: 1,
+    x: 5,
+    y: 4,
+    width: 14,
+    height: 17,
+    rx: 2
+  }), /*#__PURE__*/React.createElement("rect", {
+    key: 2,
+    x: 9,
+    y: 2,
+    width: 6,
+    height: 4,
+    rx: 1
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 3,
+    points: "9,13 11,15 15,10.5"
+  })]),
+  Hammer = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M15 12l-8.5 8.5a1.5 1.5 0 0 1-2-2L13 10"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M12 9l3-3 5 5-3 3Z"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 17,
+    y1: 4,
+    x2: 20,
+    y2: 7
+  })]),
+  FlaskConical = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 9,
+    y1: 3,
+    x2: 15,
+    y2: 3
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M10 3v6l-6 10a2 2 0 0 0 1.8 3h12.4a2 2 0 0 0 1.8-3l-6-10V3"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 7.5,
+    y1: 14,
+    x2: 16.5,
+    y2: 14
+  })]),
+  Sparkles = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5Z"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7Z"
+  })]),
+  Boxes = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M3 8l5-3 5 3v6l-5 3-5-3Z"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M13 8.3l4.5-2.6 3.5 2v5.6l-3.5 2"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 8,
+    y1: 5,
+    x2: 8,
+    y2: 11
+  })]),
+  ChevronUp = _svg(() => [/*#__PURE__*/React.createElement("polyline", {
+    key: 1,
+    points: "5,15.5 12,8.5 19,15.5"
+  })]),
+  Loader2 = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M12 3a9 9 0 1 0 9 9"
+  })]),
+  Info = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 12,
+    r: 9
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 12,
+    y1: 11,
+    x2: 12,
+    y2: 16
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 12,
+    y1: 7.5,
+    x2: 12,
+    y2: 7.51
+  })]),
+  Upload = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 12,
+    y1: 4,
+    x2: 12,
+    y2: 16
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "7,9 12,4 17,9"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 3,
+    d: "M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"
+  })]),
+  Download = _svg(() => [/*#__PURE__*/React.createElement("line", {
+    key: 1,
+    x1: 12,
+    y1: 4,
+    x2: 12,
+    y2: 16
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "7,11 12,16 17,11"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 3,
+    d: "M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"
+  })]),
+  FileSpreadsheet = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    key: 2,
+    points: "15,2 15,7 20,7"
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 8,
+    y1: 13,
+    x2: 16,
+    y2: 13
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 4,
+    x1: 8,
+    y1: 17,
+    x2: 16,
+    y2: 17
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 5,
+    x1: 11,
+    y1: 13,
+    x2: 11,
+    y2: 21
+  })]);
 /* ===================== DESIGN TOKENS ===================== */
 const COLORS = {
   bg: "#EAEFF5",
@@ -353,15 +976,22 @@ const COLORS = {
   text: "#1A2130",
   textDim: "#5B6472",
   textFaint: "#94A0B2",
-  copper: "#D3272C",
-  copperBright: "#F04E45",
+  // Đỏ thương hiệu AOMAGA (đồng bộ với logo)
+  copper: "#D6111C",
+  copperBright: "#F0362E",
+  copperDark: "#A80D16",
   amber: "#B45309",
+  orange: "#EA580C",
   green: "#15803D",
   greenDim: "#DCFCE7",
   red: "#9F1239",
   redDim: "#FCE4EC",
   blue: "#2563EB",
-  violet: "#7C3AED"
+  violet: "#7C3AED",
+  // Sidebar thương hiệu (nền đỏ đậm dạng gradient)
+  sidebarBg: "#C8101A",
+  sidebarBg2: "#A80D16",
+  sidebarActiveText: "#C8101A"
 };
 const FONT_DISPLAY = "'Space Grotesk', 'Inter', system-ui, sans-serif";
 const FONT_BODY = "'Inter', system-ui, -apple-system, sans-serif";
@@ -413,6 +1043,37 @@ const STAGES = [{
   color: "#DB2777"
 }];
 const STAGE_MAP = Object.fromEntries(STAGES.map(s => [s.key, s]));
+// Icon SVG riêng cho từng loại công đoạn (thay thế emoji 🧵🔥⚗️🪢)
+const StageIconDrawing = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 12,
+    r: 7
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M7.5 9.3c1.2-1.7 7.8-1.7 9 0M7.5 12c1.2-1.7 7.8-1.7 9 0M7.5 14.7c1.2-1.7 7.8-1.7 9 0"
+  })]);
+const StageIconHeat = _svg(() => [/*#__PURE__*/React.createElement("path", {
+  key: 1,
+  d: "M12 2.5c-1 4-6 6.3-6 11a6 6 0 0 0 12 0c0-2.2-1-3.3-2-4.3c0 2-1 3-2 3c1-3.3-1-5.3-2-9.7Z"
+})]);
+const StageIconPlate = _svg(() => [/*#__PURE__*/React.createElement("path", {
+  key: 1,
+  d: "M12 3s6 7.2 6 11.2a6 6 0 0 1-12 0C6 10.2 12 3 12 3Z"
+})]);
+const StageIconTwist = _svg(() => [/*#__PURE__*/React.createElement("path", {
+    key: 1,
+    d: "M5.5 4c3 3 3 5 0 8s-3 5 0 8"
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M18.5 4c-3 3-3 5 0 8s3 5 0 8"
+  })]);
+const STAGE_ICON_MAP = {
+  drawing: StageIconDrawing,
+  heat: StageIconHeat,
+  plate: StageIconPlate,
+  twist: StageIconTwist
+};
 
 // Danh mục máy móc thiết bị theo từng công đoạn (do người dùng cung cấp)
 const MACHINE_TYPES = [{
@@ -3392,7 +4053,7 @@ function LoginScreen({
       borderColor: COLORS.copper,
       color: COLORS.copperBright
     }
-  }, "👑 admin"), /*#__PURE__*/React.createElement("button", {
+  }, "admin"), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => quickFill("to.keo", "keo@123"),
     className: "mes-btn mes-btn-ghost",
@@ -3453,47 +4114,55 @@ function Sidebar({
   mobileOpen,
   onCloseMobile
 }) {
-  const SB_BG = "#16233F";
-  const SB_BG2 = "#1D2F52";
-  const SB_BORDER = "rgba(255,255,255,0.09)";
-  const SB_TEXT = "#EAF0F9";
-  const SB_TEXT_DIM = "#93A2BE";
+  const SB_BG = COLORS.sidebarBg;
+  const SB_BG2 = COLORS.sidebarBg2;
+  const SB_BORDER = "rgba(255,255,255,0.16)";
+  const SB_TEXT = "#FFFFFF";
+  const SB_TEXT_DIM = "rgba(255,255,255,0.72)";
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-sidebar" + (mobileOpen ? " mes-sidebar--open" : ""),
     style: {
       width: collapsed ? 64 : 232,
       flexShrink: 0,
-      background: `linear-gradient(190deg, ${SB_BG}, #101A30)`,
-      borderRight: `1px solid ${SB_BORDER}`,
+      background: `linear-gradient(190deg, ${SB_BG}, ${SB_BG2})`,
       display: "flex",
       flexDirection: "column",
       height: "100vh",
       position: "sticky",
       top: 0,
       transition: "width .18s ease",
-      boxShadow: "2px 0 14px rgba(15,23,42,.12)"
+      boxShadow: "2px 0 18px rgba(168,13,22,.25)"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
       gap: 10,
-      padding: "18px 16px",
-      borderBottom: `1px solid ${SB_BORDER}`,
-      minHeight: 60
+      padding: collapsed ? "18px 10px" : "20px 16px",
+      minHeight: 64
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 38,
+      height: 38,
+      borderRadius: 10,
+      background: "#fff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+      boxShadow: "0 2px 6px rgba(0,0,0,.18)",
+      overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("img", {
     src: LOGO_DATA_URI,
     alt: "Logo",
     style: {
-      width: 34,
-      height: 34,
-      borderRadius: 8,
-      objectFit: "contain",
-      background: "#fff",
-      flexShrink: 0
+      width: "100%",
+      height: "100%",
+      objectFit: "contain"
     }
-  }), !collapsed && /*#__PURE__*/React.createElement("div", {
+  })), !collapsed && /*#__PURE__*/React.createElement("div", {
     style: {
       overflow: "hidden",
       flex: 1
@@ -3501,20 +4170,24 @@ function Sidebar({
   }, /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
     style: {
-      fontSize: 12.5,
-      fontWeight: 700,
+      fontSize: 15,
+      fontWeight: 800,
+      letterSpacing: "-.01em",
       whiteSpace: "nowrap",
       overflow: "hidden",
       textOverflow: "ellipsis",
-      color: SB_TEXT
+      color: SB_TEXT,
+      lineHeight: 1.15
     }
-  }, COMPANY_NAME), /*#__PURE__*/React.createElement("div", {
+  }, "AOMAGA"), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 10.5,
-      color: SB_TEXT_DIM,
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: ".08em",
+      color: "rgba(255,255,255,0.85)",
       whiteSpace: "nowrap"
     }
-  }, "Xưởng Đồng · MES")), /*#__PURE__*/React.createElement("button", {
+  }, "VIỆT NAM")), /*#__PURE__*/React.createElement("button", {
     onClick: onCloseMobile,
     className: "mes-sidebar-close",
     "aria-label": "Đóng menu",
@@ -3531,7 +4204,7 @@ function Sidebar({
   }))), /*#__PURE__*/React.createElement("nav", {
     style: {
       flex: 1,
-      padding: "12px 10px",
+      padding: "10px 10px",
       overflowY: "auto"
     }
   }, NAV_ITEMS.filter(n => n.roles.includes(role)).map(item => {
@@ -3546,17 +4219,18 @@ function Sidebar({
         alignItems: "center",
         gap: 11,
         width: "100%",
-        padding: "9px 11px",
-        marginBottom: 3,
-        borderRadius: 8,
+        padding: "10px 12px",
+        marginBottom: 4,
+        borderRadius: 9,
         border: "none",
         cursor: "pointer",
         textAlign: "left",
-        background: isActive ? "rgba(224,123,57,0.22)" : "transparent",
-        color: isActive ? "#FFB98A" : SB_TEXT_DIM,
+        background: isActive ? "#FFFFFF" : "transparent",
+        color: isActive ? COLORS.sidebarActiveText : SB_TEXT_DIM,
         fontSize: 13,
-        fontWeight: isActive ? 600 : 500,
-        borderLeft: isActive ? `2px solid ${COLORS.copperBright}` : "2px solid transparent"
+        fontWeight: isActive ? 700 : 500,
+        boxShadow: isActive ? "0 3px 10px rgba(0,0,0,.18)" : "none",
+        transition: "background .12s ease, color .12s ease"
       }
     }, /*#__PURE__*/React.createElement(Icon, {
       size: 16,
@@ -3581,8 +4255,8 @@ function Sidebar({
       padding: "8px 10px",
       borderRadius: 8,
       border: `1px solid ${SB_BORDER}`,
-      background: SB_BG2,
-      color: SB_TEXT_DIM,
+      background: "rgba(255,255,255,0.1)",
+      color: SB_TEXT,
       cursor: "pointer",
       fontSize: 12.5
     }
@@ -3613,7 +4287,7 @@ function TopBar({
       padding: "0 22px",
       position: "sticky",
       top: 0,
-      background: "rgba(14,17,22,0.85)",
+      background: "rgba(255,255,255,0.92)",
       backdropFilter: "blur(6px)",
       zIndex: 50,
       gap: 10
@@ -3694,7 +4368,7 @@ function TopBar({
       justifyContent: "center",
       fontSize: 12,
       fontWeight: 700,
-      color: "#0B0E13",
+      color: "#FFFFFF",
       flexShrink: 0
     }
   }, currentUser.fullName?.slice(0, 1)?.toUpperCase()), /*#__PURE__*/React.createElement(IconButton, {
@@ -3853,10 +4527,12 @@ function ProductionPipeline({
         background: `${s.color}1a`,
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        fontSize: 20
+        justifyContent: "center"
       }
-    }, s.emoji), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(STAGE_ICON_MAP[s.icon] || CircleDot, {
+      size: 21,
+      color: s.color
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: COLORS.textDim,
@@ -6573,12 +7249,12 @@ function AttendanceSection({
     style: {
       fontSize: 12
     }
-  }, "☀️ Ca Ngày"), /*#__PURE__*/React.createElement(Button, {
+  }, "Ca Ngày"), /*#__PURE__*/React.createElement(Button, {
     onClick: () => setAllShift("caDem", filterTeam),
     style: {
       fontSize: 12
     }
-  }, "🌙 Ca Đêm"), /*#__PURE__*/React.createElement("div", {
+  }, "Ca Đêm"), /*#__PURE__*/React.createElement("div", {
     style: {
       marginLeft: "auto",
       display: "flex",
@@ -6922,7 +7598,7 @@ function AttendanceSection({
         color: COLORS.textDim,
         cursor: "pointer"
       }
-    }, "☀️ Ca Ngày"), /*#__PURE__*/React.createElement("button", {
+    }, "Ca Ngày"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: () => setAllShift("caDem", team),
       style: {
@@ -6934,7 +7610,7 @@ function AttendanceSection({
         color: COLORS.textDim,
         cursor: "pointer"
       }
-    }, "🌙 Ca Đêm"))))), members.map(m => {
+    }, "Ca Đêm"))))), members.map(m => {
       const st = getStatus(m.id);
       return /*#__PURE__*/React.createElement("tr", {
         key: m.id
@@ -6979,7 +7655,7 @@ function AttendanceSection({
           color: COLORS.textFaint,
           cursor: "pointer"
         }
-      }, "✕ Xóa")));
+      }, "Xóa")));
     }), /*#__PURE__*/React.createElement("tr", {
       key: `sub-${team}`,
       style: {
@@ -7069,10 +7745,10 @@ function StaffPage({
     }
   }, [{
     key: "list",
-    label: "📋 Danh sách nhân viên"
+    label: "Danh sách nhân viên"
   }, {
     key: "attendance",
-    label: "✅ Điểm danh theo ngày"
+    label: "Điểm danh theo ngày"
   }].map(t => /*#__PURE__*/React.createElement("button", {
     key: t.key,
     type: "button",
@@ -8137,15 +8813,15 @@ function ReportsPage({
       paddingTop: 4
     }
   }, /*#__PURE__*/React.createElement(KeoTrungSummaryTable, {
-    title: "📅 Bảng số liệu theo ngày",
+    title: "Bảng số liệu theo ngày",
     agg: keoTrungWireDay,
     colPrefix: "Mã "
   }), /*#__PURE__*/React.createElement(KeoTrungSummaryTable, {
-    title: "🗓️ Bảng số liệu theo tuần",
+    title: "Bảng số liệu theo tuần",
     agg: keoTrungWireWeek,
     colPrefix: "Mã "
   }), /*#__PURE__*/React.createElement(KeoTrungSummaryTable, {
-    title: "📆 Bảng số liệu theo tháng",
+    title: "Bảng số liệu theo tháng",
     agg: keoTrungWireMonth,
     colPrefix: "Mã "
   })), keoTrungScrapDay.data.length > 0 ? /*#__PURE__*/React.createElement("div", {
@@ -8170,15 +8846,15 @@ function ReportsPage({
       verticalAlign: -2
     }
   }), "Phế liệu Kéo trung theo mã nguyên liệu (A/B/C) — ", fmtNum(keoTrungScrapDay.totalKg), " kg"), /*#__PURE__*/React.createElement(KeoTrungSummaryTable, {
-    title: "📅 Bảng số liệu theo ngày",
+    title: "Bảng số liệu theo ngày",
     agg: keoTrungScrapDay,
     colPrefix: "Mã "
   }), /*#__PURE__*/React.createElement(KeoTrungSummaryTable, {
-    title: "🗓️ Bảng số liệu theo tuần",
+    title: "Bảng số liệu theo tuần",
     agg: keoTrungScrapWeek,
     colPrefix: "Mã "
   }), /*#__PURE__*/React.createElement(KeoTrungSummaryTable, {
-    title: "📆 Bảng số liệu theo tháng",
+    title: "Bảng số liệu theo tháng",
     agg: keoTrungScrapMonth,
     colPrefix: "Mã "
   })) : /*#__PURE__*/React.createElement("div", {
@@ -9364,13 +10040,15 @@ function AdminPage({
         width: 36,
         height: 36,
         borderRadius: 10,
-        background: `linear-gradient(135deg, #FF9800, #F44336)`,
+        background: `linear-gradient(135deg, ${COLORS.orange}, ${COLORS.copperBright})`,
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        fontSize: 18
+        justifyContent: "center"
       }
-    }, "🔥"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(RefreshCw, {
+      size: 18,
+      color: "#fff"
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "mes-mono",
       style: {
         fontSize: 10,
@@ -9495,7 +10173,7 @@ function AdminPage({
       color: COLORS.text,
       marginBottom: 12
     }
-  }, "📋 Hướng dẫn chia sẻ ứng dụng cho nhân viên"), [{
+  }, "Hướng dẫn chia sẻ ứng dụng cho nhân viên"), [{
     step: "1",
     title: "Bấm nút Share (Chia sẻ)",
     desc: 'Tìm nút "Share" hoặc biểu tượng chia sẻ ở góc trên bên phải của khung ứng dụng này trong Claude.ai.',
@@ -9652,7 +10330,7 @@ function AdminPage({
     style: {
       fontSize: 13
     }
-  }, "📋 Copy danh sách tài khoản tất cả tổ"))), /*#__PURE__*/React.createElement(SectionHeading, {
+  }, "Copy danh sách tài khoản tất cả tổ"))), /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Quản trị hệ thống",
     title: "Quản lý tài khoản & phân quyền",
     action: /*#__PURE__*/React.createElement(Button, {
@@ -10790,7 +11468,7 @@ class AppErrorBoundary extends React.Component {
           padding: 24, textAlign: "center", background: "#EAEFF5", color: "#1A2130"
         }
       },
-        /*#__PURE__*/React.createElement("div", { style: { fontSize: 40 } }, "⚠️"),
+        /*#__PURE__*/React.createElement(AlertTriangle, { size: 40, color: COLORS.copperBright }),
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 17, fontWeight: 700 } }, "Đã xảy ra lỗi hiển thị"),
         /*#__PURE__*/React.createElement("div", { style: { fontSize: 13, color: "#5B6472", maxWidth: 480 } },
           String((this.state.error && this.state.error.message) || this.state.error)),
