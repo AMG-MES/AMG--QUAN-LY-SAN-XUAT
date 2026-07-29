@@ -3885,23 +3885,24 @@ function LoginScreen({
       display: "flex",
       minHeight: "100vh",
       position: "relative",
-      overflow: "hidden"
+      overflow: "hidden",
+      background: COLORS.bg
     }
   }, /*#__PURE__*/React.createElement(GlobalStyle, null), /*#__PURE__*/React.createElement("div", {
     className: "mes-login-image-panel",
     style: {
       flex: "5.7",
       position: "relative",
-      backgroundImage: `url(${FACTORY_PHOTO_DATA_URI})`,
+      background: `${COLORS.copperDark} url(${FACTORY_PHOTO_DATA_URI})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
-      filter: "brightness(1.5) saturate(1.18) contrast(1.1)"
+      filter: "brightness(0.92) saturate(1.15) contrast(1.08)"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       inset: 0,
-      background: `linear-gradient(200deg, rgba(11,14,19,.08) 0%, rgba(11,14,19,.18) 55%, rgba(11,14,19,.72) 100%)`
+      background: `linear-gradient(200deg, rgba(11,14,19,.15) 0%, rgba(11,14,19,.28) 55%, rgba(11,14,19,.78) 100%)`
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -4616,11 +4617,12 @@ function ProductionPipeline({
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 10,
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        border: `1.5px solid ${s.color}55`,
+        width: 88,
+        height: 88,
+        borderRadius: 18,
+        border: `2px solid ${s.color}66`,
         background: `${s.color}1a`,
+        boxShadow: `0 3px 10px ${s.color}22`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -4637,15 +4639,16 @@ function ProductionPipeline({
         display: "block"
       }
     }) : /*#__PURE__*/React.createElement(STAGE_ICON_MAP[s.icon] || CircleDot, {
-      size: 21,
+      size: 40,
       color: s.color
     })), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 11,
+        fontSize: 13,
         color: COLORS.textDim,
-        marginTop: 6,
+        marginTop: 8,
         textAlign: "center",
-        whiteSpace: "nowrap"
+        whiteSpace: "nowrap",
+        fontWeight: 600
       }
     }, s.label)), i < STAGES.length - 1 && /*#__PURE__*/React.createElement("svg", {
       width: "34",
@@ -5632,6 +5635,8 @@ function OrdersPage({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: `${filtered.length} / ${orders.length} đơn hàng`,
     title: "Đơn hàng & theo dõi BOM theo khách hàng",
+    icon: ClipboardList,
+    iconColor: COLORS.copper,
     action: isAdmin && /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       onClick: () => setModalState({
@@ -6163,7 +6168,9 @@ function MachinesPage({
   })).filter(g => g.machines.length > 0);
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: `${total} máy móc thiết bị`,
-    title: "Giám sát hệ thống máy móc thiết bị hoạt động"
+    title: "Giám sát hệ thống máy móc thiết bị hoạt động",
+    icon: Cog,
+    iconColor: COLORS.blue
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -6528,6 +6535,8 @@ function QCPage({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Kiểm soát chất lượng",
     title: "Phế liệu & chất lượng sản phẩm",
+    icon: Recycle,
+    iconColor: COLORS.red,
     action: /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       onClick: () => setShowAdd(true)
@@ -8007,6 +8016,8 @@ function StaffPage({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: `${staff.length} nhân viên`,
     title: "Nhân sự & Điểm danh",
+    icon: Users,
+    iconColor: COLORS.violet,
     action: canEdit && /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -8772,6 +8783,8 @@ function ReportsPage({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Real-time",
     title: "Báo cáo & biểu đồ so sánh theo thời gian",
+    icon: BarChart3,
+    iconColor: COLORS.green,
     action: /*#__PURE__*/React.createElement(Badge, {
       color: COLORS.green
     }, /*#__PURE__*/React.createElement("span", {
@@ -9377,7 +9390,9 @@ function ReportsPage({
     if (stageData.length === 0) return null;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionHeading, {
       eyebrow: "Chi tiết từng công đoạn",
-      title: "Sản lượng & phế liệu theo từng công đoạn"
+      title: "Sản lượng & phế liệu theo từng công đoạn",
+      icon: BarChart3,
+      iconColor: COLORS.orange
     }), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
@@ -9703,6 +9718,8 @@ function KeoTrungPage({
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Công đoạn cung cấp nguyên vật liệu",
     title: "Nhập sản lượng Kéo trung",
+    icon: Hammer,
+    iconColor: COLORS.copper,
     action: /*#__PURE__*/React.createElement(Badge, {
       color: COLORS.green
     }, /*#__PURE__*/React.createElement("span", {
@@ -10659,6 +10676,8 @@ function AdminPage({
   }, "Copy danh sách tài khoản tất cả tổ"))), /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Quản trị hệ thống",
     title: "Quản lý tài khoản & phân quyền",
+    icon: ShieldCheck,
+    iconColor: COLORS.violet,
     action: /*#__PURE__*/React.createElement(Button, {
       variant: "primary",
       onClick: () => setModal({
@@ -10754,7 +10773,9 @@ function AdminPage({
     title: "Xóa"
   }))))))), /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Dữ liệu hệ thống",
-    title: "Khôi phục dữ liệu mẫu gốc"
+    title: "Khôi phục dữ liệu mẫu gốc",
+    icon: RefreshCw,
+    iconColor: COLORS.red
   }), /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
@@ -10792,6 +10813,8 @@ function AdminPage({
   }), " Khôi phục dữ liệu mẫu gốc")), /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: `${auditLog.length} bản ghi`,
     title: "Nhật ký theo dõi chỉnh sửa",
+    icon: History,
+    iconColor: COLORS.blue,
     action: /*#__PURE__*/React.createElement("select", {
       className: "mes-input",
       style: {
@@ -11689,31 +11712,54 @@ function ProgressBar({ pct, color }) {
 }
 
 /* ---------- SectionHeading ---------- */
-function SectionHeading({ eyebrow, title, subtitle, action }) {
+function SectionHeading({ eyebrow, title, subtitle, action, icon: Icon, iconColor }) {
+  const _iconColor = iconColor || COLORS.copper;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "flex-end",
       justifyContent: "space-between",
       gap: 16,
-      marginBottom: 18,
+      marginBottom: 22,
       flexWrap: "wrap"
     }
-  }, /*#__PURE__*/React.createElement("div", null, eyebrow && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11.5,
+      display: "flex",
+      alignItems: "center",
+      gap: 14
+    }
+  }, Icon && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 52,
+      height: 52,
+      flexShrink: 0,
+      borderRadius: 14,
+      background: `${_iconColor}17`,
+      border: `2px solid ${_iconColor}66`,
+      boxShadow: `0 2px 8px ${_iconColor}22`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    size: 26,
+    color: _iconColor
+  })), /*#__PURE__*/React.createElement("div", null, eyebrow && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
       fontWeight: 700,
-      letterSpacing: ".04em",
+      letterSpacing: ".05em",
       textTransform: "uppercase",
       color: COLORS.copper,
-      marginBottom: 4
+      marginBottom: 5
     }
   }, eyebrow), /*#__PURE__*/React.createElement("div", {
     className: "mes-display",
-    style: { fontSize: 20, fontWeight: 800, color: COLORS.text }
+    style: { fontSize: 40, fontWeight: 800, color: COLORS.text, letterSpacing: "-.02em", lineHeight: 1.1 }
   }, title), subtitle && /*#__PURE__*/React.createElement("div", {
-    style: { fontSize: 12.5, color: COLORS.textDim, marginTop: 4 }
-  }, subtitle)), action && /*#__PURE__*/React.createElement("div", null, action));
+    style: { fontSize: 14, color: COLORS.textDim, marginTop: 6 }
+  }, subtitle))), action && /*#__PURE__*/React.createElement("div", null, action));
 }
 
 /* ---------- EmptyState ---------- */
