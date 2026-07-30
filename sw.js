@@ -1,4 +1,4 @@
-const V='mes-v16-seamless-fix', CDN=[
+const V='mes-v17-card-width-fix', CDN=[
   'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js',
   'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js',
   'https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js',

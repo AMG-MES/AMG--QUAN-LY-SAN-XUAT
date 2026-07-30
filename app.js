@@ -4009,12 +4009,12 @@ function LoginScreen({
       position: "absolute",
       left: "60.4%",
       top: "23%",
-      width: "30.5%",
-      height: "63.6%",
+      width: "27.6%",
+      height: "63.1%",
       overflowY: "auto",
       background: "#FFFFFF",
       borderRadius: "1.6%",
-      padding: "1.6% 1.9%",
+      padding: "1.5% 1.7%",
       boxSizing: "border-box"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -4221,8 +4221,8 @@ function LoginScreen({
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 6,
-      padding: "6% 6%",
+      gap: 5,
+      padding: "5% 4%",
       borderRadius: 10,
       border: `1.5px solid ${q.color}55`,
       background: `${q.color}12`,
@@ -4230,7 +4230,7 @@ function LoginScreen({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: "28%",
+      width: "26%",
       aspectRatio: "1 / 1",
       flexShrink: 0,
       borderRadius: 7,
@@ -4240,14 +4240,15 @@ function LoginScreen({
       justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement(q.icon, {
-    size: 13,
+    size: 12,
     color: "#fff"
   })), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: "clamp(8px, .68vw, 11px)",
+      fontSize: "clamp(7px, .58vw, 10px)",
       fontWeight: 700,
       color: "#1F2937",
-      textAlign: "left"
+      textAlign: "left",
+      whiteSpace: "nowrap"
     }
   }, q.label)))))));
 }
