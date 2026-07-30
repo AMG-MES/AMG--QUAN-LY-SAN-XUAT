@@ -3663,6 +3663,7 @@ function useAppData() {
   const [auditLog, setAuditLog] = React.useState([]);
   const [attendance, setAttendance] = React.useState({});
   const [certificates, setCertificates] = React.useState([]);
+  const [certFolders, setCertFolders] = React.useState([]);
   const [storageError] = React.useState(false);
   // Lần chạy offline đầu tiên (localStorage trống) → gieo dữ liệu mẫu gốc,
   // để app không hiện trống trơn khi chưa cấu hình Firebase.
@@ -3766,10 +3767,14 @@ function useAppData() {
       setAttendance(a);
       done();
     }, () => done()), db.collection(FS.certificates).onSnapshot(s => {
-      const list = s.docs.map(d => ({
+      const all = s.docs.map(d => ({
         id: d.id,
         ...d.data()
       }));
+      // Tài liệu đặc biệt "_folders_meta" lưu danh sách thư mục — tách riêng, không hiện như 1 chứng chỉ
+      const metaDoc = all.find(d => d.id === "_folders_meta");
+      setCertFolders(metaDoc && Array.isArray(metaDoc.folders) ? metaDoc.folders : []);
+      const list = all.filter(d => d.id !== "_folders_meta");
       list.sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || ""));
       setCertificates(list);
       done();
@@ -3838,6 +3843,33 @@ function useAppData() {
   const deleteCertificate = React.useCallback(async id => {
     await db.collection(FS.certificates).doc(id).delete();
   }, []);
+  const addCertFolder = React.useCallback(async (name, color) => {
+    const id = "f_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const next = [...certFolders, {
+      id,
+      name,
+      color
+    }];
+    await db.collection(FS.certificates).doc("_folders_meta").set({
+      folders: next
+    });
+    return id;
+  }, [certFolders]);
+  const deleteCertFolder = React.useCallback(async id => {
+    const next = certFolders.filter(f => f.id !== id);
+    await db.collection(FS.certificates).doc("_folders_meta").set({
+      folders: next
+    });
+    // Các chứng chỉ đang thuộc thư mục bị xoá -> chuyển về "Chưa phân loại"
+    const affected = certificates.filter(c => c.folderId === id);
+    const batch = db.batch();
+    affected.forEach(c => {
+      batch.update(db.collection(FS.certificates).doc(c.id), {
+        folderId: null
+      });
+    });
+    if (affected.length) await batch.commit();
+  }, [certFolders, certificates]);
   const refreshAll = React.useCallback(() => {}, []); // no-op: onSnapshot handles it
 
   return {
@@ -3851,6 +3883,7 @@ function useAppData() {
     auditLog,
     attendance,
     certificates,
+    certFolders,
     persistUsers,
     persistOrders,
     persistMachines,
@@ -3860,6 +3893,8 @@ function useAppData() {
     persistAttendance,
     addCertificate,
     deleteCertificate,
+    addCertFolder,
+    deleteCertFolder,
     pushAudit,
     refreshAll
   };
@@ -6520,6 +6555,94 @@ function QCPage({
     askConfirm
   } = useDialog();
   const [showAdd, setShowAdd] = useState(false);
+  const [exportPeriod, setExportPeriod] = useState("day");
+  const [exportDate, setExportDate] = useState(() => new Date().toISOString().slice(0, 10));
+  function getExportRange() {
+    const ref = new Date(exportDate + "T00:00:00");
+    let start, end, label;
+    if (exportPeriod === "day") {
+      start = new Date(ref);
+      end = new Date(ref);
+      label = `Ngày ${fmtDate(exportDate)}`;
+    } else if (exportPeriod === "week") {
+      const day = ref.getDay() || 7; // Chủ nhật=0 -> coi là ngày 7 trong tuần
+      start = new Date(ref);
+      start.setDate(ref.getDate() - day + 1); // Thứ 2 đầu tuần
+      end = new Date(start);
+      end.setDate(start.getDate() + 6); // Chủ nhật cuối tuần
+      label = `Tuần ${fmtDate(start.toISOString().slice(0, 10))} - ${fmtDate(end.toISOString().slice(0, 10))}`;
+    } else {
+      start = new Date(ref.getFullYear(), ref.getMonth(), 1);
+      end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
+      label = `Tháng ${ref.getMonth() + 1}/${ref.getFullYear()}`;
+    }
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    return {
+      start,
+      end,
+      label
+    };
+  }
+  function handleExportScrapRate() {
+    const {
+      start,
+      end,
+      label
+    } = getExportRange();
+    const inRange = d => {
+      const t = new Date(d).getTime();
+      return !isNaN(t) && t >= start.getTime() && t <= end.getTime();
+    };
+    const prodByStage = {};
+    (auditLog || []).forEach(a => {
+      if (a.type === "production_entry" && a.date && typeof a.qty === "number" && inRange(a.date)) {
+        prodByStage[a.stageKey] = (prodByStage[a.stageKey] || 0) + a.qty;
+      }
+    });
+    const scrapByStageRange = {};
+    scrap.forEach(s => {
+      if (s.date && inRange(s.date)) {
+        scrapByStageRange[s.stage] = (scrapByStageRange[s.stage] || 0) + (s.qty || 0);
+      }
+    });
+    const rows = STAGES.map(s => {
+      const production = prodByStage[s.key] || 0;
+      const scrapQty = scrapByStageRange[s.key] || 0;
+      const pct = production + scrapQty > 0 ? scrapQty / (production + scrapQty) * 100 : 0;
+      return {
+        "Công đoạn": s.label,
+        "Sản lượng (kg)": production,
+        "Phế liệu (kg)": scrapQty,
+        "Tỷ lệ phế liệu (%)": Number(pct.toFixed(2))
+      };
+    });
+    const totalProd = rows.reduce((a, r) => a + r["Sản lượng (kg)"], 0);
+    const totalScrap = rows.reduce((a, r) => a + r["Phế liệu (kg)"], 0);
+    rows.push({
+      "Công đoạn": "TỔNG CỘNG",
+      "Sản lượng (kg)": totalProd,
+      "Phế liệu (kg)": totalScrap,
+      "Tỷ lệ phế liệu (%)": Number((totalProd + totalScrap > 0 ? totalScrap / (totalProd + totalScrap) * 100 : 0).toFixed(2))
+    });
+    if (!window.XLSX) {
+      alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      return;
+    }
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{
+      wch: 20
+    }, {
+      wch: 16
+    }, {
+      wch: 16
+    }, {
+      wch: 18
+    }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ty le phe lieu");
+    XLSX.writeFile(wb, `ty_le_phe_lieu_${exportPeriod}_${exportDate}.xlsx`);
+  }
   const byStage = useMemo(() => {
     const m = {};
     STAGES.forEach(s => m[s.key] = 0);
@@ -6661,6 +6784,57 @@ function QCPage({
     fill: COLORS.red,
     radius: [4, 4, 0, 0]
   }))))), /*#__PURE__*/React.createElement("div", {
+    className: "mes-card",
+    style: {
+      marginBottom: 14,
+      padding: 14,
+      display: "flex",
+      alignItems: "flex-end",
+      gap: 10,
+      flexWrap: "wrap",
+      border: `1.5px solid ${COLORS.green}55`,
+      borderTop: `4px solid ${COLORS.green}`
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Kỳ báo cáo"
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "mes-input",
+    value: exportPeriod,
+    onChange: e => setExportPeriod(e.target.value),
+    style: {
+      width: 130
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "day"
+  }, "Theo ngày"), /*#__PURE__*/React.createElement("option", {
+    value: "week"
+  }, "Theo tuần"), /*#__PURE__*/React.createElement("option", {
+    value: "month"
+  }, "Theo tháng"))), /*#__PURE__*/React.createElement(Field, {
+    label: exportPeriod === "month" ? "Chọn tháng (ngày bất kỳ trong tháng)" : exportPeriod === "week" ? "Chọn ngày trong tuần" : "Chọn ngày"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    className: "mes-input",
+    value: exportDate,
+    onChange: e => setExportDate(e.target.value),
+    style: {
+      width: 170
+    }
+  })), /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    onClick: handleExportScrapRate,
+    style: {
+      background: `linear-gradient(135deg, ${COLORS.green}, #0F7A38)`
+    }
+  }, /*#__PURE__*/React.createElement(Download, {
+    size: 14
+  }), " Xuất Excel tỷ lệ phế liệu"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: COLORS.textFaint,
+      marginBottom: 8
+    }
+  }, getExportRange().label)), /*#__PURE__*/React.createElement("div", {
     className: "mes-card mes-scroll-x",
     style: {
       marginBottom: 18,
@@ -10376,10 +10550,12 @@ const CERT_TYPES = [{
 const CERT_MAX_BYTES = 700 * 1024; // ~700KB gốc (base64 ~1.37x → dưới giới hạn 1MB/document của Firestore)
 function CertificateAddModal({
   onClose,
-  onAdd
+  onAdd,
+  folders
 }) {
   const [name, setName] = useState("");
   const [type, setType] = useState("iso9001");
+  const [folderId, setFolderId] = useState("");
   const [note, setNote] = useState("");
   const [file, setFile] = useState(null);
   const [fileDataUri, setFileDataUri] = useState("");
@@ -10417,6 +10593,7 @@ function CertificateAddModal({
       await onAdd({
         name: name.trim(),
         type,
+        folderId: folderId || null,
         note: note.trim(),
         fileDataUri,
         fileMime,
@@ -10449,6 +10626,17 @@ function CertificateAddModal({
     key: t.key,
     value: t.key
   }, t.label)))), /*#__PURE__*/React.createElement(Field, {
+    label: "Thư mục"
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "mes-input",
+    value: folderId,
+    onChange: e => setFolderId(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Không phân loại —"), (folders || []).map(f => /*#__PURE__*/React.createElement("option", {
+    key: f.id,
+    value: f.id
+  }, f.name)))), /*#__PURE__*/React.createElement(Field, {
     label: "File chứng chỉ (ảnh hoặc PDF)"
   }, /*#__PURE__*/React.createElement("input", {
     type: "file",
@@ -10506,13 +10694,33 @@ function CertificateAddModal({
 }
 function CertificatesPage({
   certificates,
+  folders,
   isAdmin,
   currentUser,
   onAdd,
-  onDelete
+  onDelete,
+  onAddFolder,
+  onDeleteFolder
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [selectedFolder, setSelectedFolder] = useState("all");
+  const [showAddFolder, setShowAddFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [confirmDeleteFolder, setConfirmDeleteFolder] = useState(null);
+  const FOLDER_COLORS = ["#2563EB", "#16A34A", "#EA580C", "#7C3AED", "#DB2777", "#0D9488", "#CA8A04"];
+  const visibleCertificates = certificates.filter(c => {
+    if (selectedFolder === "all") return true;
+    if (selectedFolder === "none") return !c.folderId;
+    return c.folderId === selectedFolder;
+  });
+  async function handleAddFolderSubmit() {
+    if (!newFolderName.trim()) return;
+    const color = FOLDER_COLORS[(folders || []).length % FOLDER_COLORS.length];
+    await onAddFolder(newFolderName.trim(), color);
+    setNewFolderName("");
+    setShowAddFolder(false);
+  }
   async function handleAdd(cert) {
     await onAdd({
       ...cert,
@@ -10530,7 +10738,148 @@ function CertificatesPage({
     }, /*#__PURE__*/React.createElement(Plus, {
       size: 14
     }), " Thêm chứng chỉ")
-  }), certificates.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
+  }),
+  /* Thanh thư mục */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 18,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSelectedFolder("all"),
+    className: "mes-btn",
+    style: {
+      padding: "6px 14px",
+      borderRadius: 999,
+      border: `1.5px solid ${selectedFolder === "all" ? COLORS.copper : COLORS.border}`,
+      background: selectedFolder === "all" ? `${COLORS.copper}18` : COLORS.bgPanel2,
+      color: selectedFolder === "all" ? COLORS.copperBright : COLORS.textDim,
+      fontWeight: 700,
+      fontSize: 12.5
+    }
+  }, "Tất cả (", certificates.length, ")"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSelectedFolder("none"),
+    className: "mes-btn",
+    style: {
+      padding: "6px 14px",
+      borderRadius: 999,
+      border: `1.5px solid ${selectedFolder === "none" ? COLORS.textDim : COLORS.border}`,
+      background: selectedFolder === "none" ? COLORS.bgPanel2 : COLORS.bgPanel2,
+      color: COLORS.textDim,
+      fontWeight: 700,
+      fontSize: 12.5
+    }
+  }, "Chưa phân loại (", certificates.filter(c => !c.folderId).length, ")"), (folders || []).map(f => /*#__PURE__*/React.createElement("div", {
+    key: f.id,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 2
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setSelectedFolder(f.id),
+    className: "mes-btn",
+    style: {
+      padding: "6px 10px 6px 14px",
+      borderRadius: selectedFolder === f.id ? "999px 0 0 999px" : 999,
+      border: `1.5px solid ${selectedFolder === f.id ? f.color : COLORS.border}`,
+      borderRight: selectedFolder === f.id ? "none" : undefined,
+      background: selectedFolder === f.id ? `${f.color}18` : COLORS.bgPanel2,
+      color: selectedFolder === f.id ? f.color : COLORS.textDim,
+      fontWeight: 700,
+      fontSize: 12.5,
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: 999,
+      background: f.color,
+      flexShrink: 0
+    }
+  }), f.name, " (", certificates.filter(c => c.folderId === f.id).length, ")"), isAdmin && selectedFolder === f.id && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setConfirmDeleteFolder(f),
+    title: "Xoá thư mục",
+    style: {
+      padding: "6px 8px",
+      borderRadius: "0 999px 999px 0",
+      border: `1.5px solid ${f.color}`,
+      borderLeft: "none",
+      background: `${f.color}18`,
+      color: f.color,
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(X, {
+    size: 12
+  })))), isAdmin && (showAddFolder ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    autoFocus: true,
+    className: "mes-input",
+    style: {
+      width: 150,
+      padding: "6px 10px",
+      fontSize: 12.5
+    },
+    placeholder: "Tên thư mục...",
+    value: newFolderName,
+    onChange: e => setNewFolderName(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter") handleAddFolderSubmit();
+      if (e.key === "Escape") setShowAddFolder(false);
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: handleAddFolderSubmit,
+    className: "mes-btn",
+    style: {
+      padding: "6px 10px",
+      background: COLORS.copper,
+      borderColor: COLORS.copper,
+      color: "#fff"
+    }
+  }, /*#__PURE__*/React.createElement(CheckCircle2, {
+    size: 14
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setShowAddFolder(false);
+      setNewFolderName("");
+    },
+    className: "mes-btn",
+    style: {
+      padding: "6px 10px"
+    }
+  }, /*#__PURE__*/React.createElement(X, {
+    size: 14
+  }))) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowAddFolder(true),
+    className: "mes-btn",
+    style: {
+      padding: "6px 14px",
+      borderRadius: 999,
+      border: `1.5px dashed ${COLORS.borderLight}`,
+      background: "transparent",
+      color: COLORS.textDim,
+      fontWeight: 700,
+      fontSize: 12.5,
+      display: "flex",
+      alignItems: "center",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement(Plus, {
+    size: 13
+  }), " Thư mục"))), visibleCertificates.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     icon: AwardIcon,
     title: "Chưa có chứng chỉ nào",
     hint: "Bấm \"Thêm chứng chỉ\" để tải lên chứng nhận ISO, UL của nhà máy"
@@ -10540,8 +10889,9 @@ function CertificatesPage({
       gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
       gap: 16
     }
-  }, certificates.map(c => {
+  }, visibleCertificates.map(c => {
     const t = CERT_TYPES.find(x => x.key === c.type) || CERT_TYPES[4];
+    const folder = (folders || []).find(f => f.id === c.folderId);
     return /*#__PURE__*/React.createElement("div", {
       key: c.id,
       className: "mes-card",
@@ -10578,7 +10928,9 @@ function CertificatesPage({
       }
     }, /*#__PURE__*/React.createElement(Badge, {
       color: t.color
-    }, t.label), /*#__PURE__*/React.createElement("div", {
+    }, t.label), folder && /*#__PURE__*/React.createElement(Badge, {
+      color: folder.color
+    }, folder.name), /*#__PURE__*/React.createElement("div", {
       style: {
         fontWeight: 700,
         marginTop: 8,
@@ -10627,8 +10979,31 @@ function CertificatesPage({
     }))))));
   })), showAdd && /*#__PURE__*/React.createElement(CertificateAddModal, {
     onClose: () => setShowAdd(false),
-    onAdd: handleAdd
-  }), confirmDelete && /*#__PURE__*/React.createElement(Modal, {
+    onAdd: handleAdd,
+    folders: folders
+  }), confirmDeleteFolder && /*#__PURE__*/React.createElement(Modal, {
+    title: "Xoá thư mục",
+    onClose: () => setConfirmDeleteFolder(null)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, "Xoá thư mục \"", confirmDeleteFolder.name, "\"? Các chứng chỉ trong thư mục này sẽ chuyển về \"Chưa phân loại\", không bị xoá."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      justifyContent: "flex-end"
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    onClick: () => setConfirmDeleteFolder(null)
+  }, "Huỷ"), /*#__PURE__*/React.createElement(Button, {
+    variant: "danger",
+    onClick: async () => {
+      await onDeleteFolder(confirmDeleteFolder.id);
+      setSelectedFolder("all");
+      setConfirmDeleteFolder(null);
+    }
+  }, "Xoá thư mục"))), confirmDelete && /*#__PURE__*/React.createElement(Modal, {
     title: "Xoá chứng chỉ",
     onClose: () => setConfirmDelete(null)
   }, /*#__PURE__*/React.createElement("div", {
@@ -11795,10 +12170,13 @@ function AppInner() {
     onAttendanceUpdate: handleAttendanceUpdate
   }), activeTab === "certificates" && /*#__PURE__*/React.createElement(CertificatesPage, {
     certificates: data.certificates,
+    folders: data.certFolders,
     isAdmin: isAdmin,
     currentUser: currentUser,
     onAdd: data.addCertificate,
-    onDelete: data.deleteCertificate
+    onDelete: data.deleteCertificate,
+    onAddFolder: data.addCertFolder,
+    onDeleteFolder: data.deleteCertFolder
   }), activeTab === "reports" && /*#__PURE__*/React.createElement(ReportsPage, {
     orders: data.orders,
     machines: data.machines,
