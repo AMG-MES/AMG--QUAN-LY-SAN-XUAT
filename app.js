@@ -3964,9 +3964,22 @@ function LoginScreen({
       alignItems: "center",
       justifyContent: "center",
       background: "#0A2A52",
-      overflow: "hidden"
+      overflow: "hidden",
+      position: "relative"
     }
-  }, /*#__PURE__*/React.createElement(GlobalStyle, null), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(GlobalStyle, null),
+  /* Lớp nền mờ lấp đầy toàn màn hình (tránh 2 dải tối trơn khi tỉ lệ màn hình khác ảnh) */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      backgroundImage: `url(${LOGIN_MAKET_DATA_URI})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      filter: "blur(22px) brightness(.55) saturate(1.1)",
+      transform: "scale(1.1)"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
       width: "min(100vw, calc(100vh * 1536 / 1024))",
@@ -3986,6 +3999,8 @@ function LoginScreen({
       left: "61.2%",
       top: "16.8%",
       width: "36.3%",
+      height: "72.2%",
+      overflowY: "auto",
       background: "rgba(255,255,255,.98)",
       borderRadius: "1.6%",
       padding: "1.8% 2.2%",
