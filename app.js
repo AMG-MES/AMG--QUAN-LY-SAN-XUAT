@@ -3962,14 +3962,40 @@ function LoginScreen({
     style: {
       height: "100vh",
       width: "100vw",
-      position: "relative",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "#0A2A52",
       overflow: "hidden",
-      backgroundImage: `url(${LOGIN_FULL_BG_DATA_URI})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center"
+      position: "relative"
     }
   }, /*#__PURE__*/React.createElement(GlobalStyle, null),
-  /* Khung đăng nhập thật, đặt đúng vị trí % của khung trong ảnh maket mới (phủ đầy toàn khung hình) */
+  /* Lớp nền mờ lấp đầy toàn màn hình bằng chính ảnh (tránh dải trống khi tỉ lệ màn hình khác ảnh gốc) */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      backgroundImage: `url(${LOGIN_FULL_BG_DATA_URI})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      filter: "blur(25px) brightness(.75) saturate(1.15)",
+      transform: "scale(1.08)"
+    }
+  }),
+  /* Khối ảnh chính giữ NGUYÊN tỷ lệ gốc 1672:941 — đảm bảo khung đăng nhập luôn khớp đúng 100% vị trí */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: "min(100vw, calc(100vh * 1672 / 941))",
+      aspectRatio: "1672 / 941",
+      margin: "auto",
+      backgroundImage: `url(${LOGIN_FULL_BG_DATA_URI})`,
+      backgroundSize: "100% 100%",
+      backgroundRepeat: "no-repeat",
+      boxShadow: "0 0 60px rgba(0,0,0,.45)"
+    }
+  },
+  /* Khung đăng nhập thật, đặt đúng vị trí % của khung trong ảnh maket */
   /*#__PURE__*/React.createElement("div", {
     className: "mes-fade-in",
     style: {
@@ -4216,7 +4242,7 @@ function LoginScreen({
       color: "#1F2937",
       textAlign: "left"
     }
-  }, q.label))))));
+  }, q.label)))))));
 }
 
 /* ===================== LAYOUT: SIDEBAR + TOPBAR ===================== */
