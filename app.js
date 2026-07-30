@@ -228,7 +228,8 @@ const FS = {
   scrap: "scrap",
   audit: "auditLog",
   attendance: "attendance",
-  users: "users"
+  users: "users",
+  certificates: "certificates"
 };
 const serverTimestamp = () => window.firebase ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
 const writeBatch = () => window.__db ? window.__db.batch() : {
@@ -1001,6 +1002,15 @@ const Factory = _svg(() => [/*#__PURE__*/React.createElement("path", {
   }), /*#__PURE__*/React.createElement("path", {
     key: 3,
     d: "M18.5 8.5l2 1M2 15.5l3-1M19 19l3 .8"
+  })]),
+  AwardIcon = _svg(() => [/*#__PURE__*/React.createElement("circle", {
+    key: 1,
+    cx: 12,
+    cy: 8,
+    r: 6
+  }), /*#__PURE__*/React.createElement("path", {
+    key: 2,
+    d: "M8.2 13.2 6.5 21l5.5-3 5.5 3-1.7-7.8"
   })]);
 /* ===================== DESIGN TOKENS ===================== */
 const COLORS = {
@@ -1321,6 +1331,11 @@ const NAV_ITEMS = [{
   key: "staff",
   label: "Nhân sự",
   icon: Users,
+  roles: ["admin", "employee"]
+}, {
+  key: "certificates",
+  label: "Chứng nhận ISO - UL",
+  icon: AwardIcon,
   roles: ["admin", "employee"]
 }, {
   key: "reports",
@@ -3647,6 +3662,7 @@ function useAppData() {
   const [scrap, setScrap] = React.useState([]);
   const [auditLog, setAuditLog] = React.useState([]);
   const [attendance, setAttendance] = React.useState({});
+  const [certificates, setCertificates] = React.useState([]);
   const [storageError] = React.useState(false);
   // Lần chạy offline đầu tiên (localStorage trống) → gieo dữ liệu mẫu gốc,
   // để app không hiện trống trơn khi chưa cấu hình Firebase.
@@ -3676,7 +3692,7 @@ function useAppData() {
 
   React.useEffect(() => {
     let n = 0;
-    const total = 7;
+    const total = 8;
     const done = () => {
       n++;
       if (n >= total) setReady(true);
@@ -3749,6 +3765,14 @@ function useAppData() {
       });
       setAttendance(a);
       done();
+    }, () => done()), db.collection(FS.certificates).onSnapshot(s => {
+      const list = s.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+      list.sort((a, b) => (b.uploadedAt || "").localeCompare(a.uploadedAt || ""));
+      setCertificates(list);
+      done();
     }, () => done())];
     });
     return () => { cancelled = true; unsubs.forEach(u => u()); };
@@ -3803,6 +3827,17 @@ function useAppData() {
       ts: firebase.firestore.FieldValue.serverTimestamp()
     });
   }, []);
+  const addCertificate = React.useCallback(async cert => {
+    const id = cert.id || ("cert_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8));
+    await db.collection(FS.certificates).doc(id).set({
+      ...cert,
+      id,
+      uploadedAt: cert.uploadedAt || new Date().toISOString()
+    });
+  }, []);
+  const deleteCertificate = React.useCallback(async id => {
+    await db.collection(FS.certificates).doc(id).delete();
+  }, []);
   const refreshAll = React.useCallback(() => {}, []); // no-op: onSnapshot handles it
 
   return {
@@ -3815,6 +3850,7 @@ function useAppData() {
     scrap,
     auditLog,
     attendance,
+    certificates,
     persistUsers,
     persistOrders,
     persistMachines,
@@ -3822,6 +3858,8 @@ function useAppData() {
     persistScrap,
     persistAuditLog,
     persistAttendance,
+    addCertificate,
+    deleteCertificate,
     pushAudit,
     refreshAll
   };
@@ -3920,20 +3958,18 @@ function LoginScreen({
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-root mes-login-shell",
     style: {
-      minHeight: "100vh",
+      height: "100vh",
       width: "100vw",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       background: "#0A2A52",
-      overflow: "auto"
+      overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement(GlobalStyle, null), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
-      width: "100%",
-      maxWidth: "100vw",
-      maxHeight: "100vh",
+      width: "min(100vw, calc(100vh * 1536 / 1024))",
       aspectRatio: "1536 / 1024",
       margin: "auto",
       backgroundImage: `url(${LOGIN_MAKET_DATA_URI})`,
@@ -10284,6 +10320,310 @@ function UserFormModal({
     size: 14
   }), " Lưu tài khoản"));
 }
+const CERT_TYPES = [{
+  key: "iso9001",
+  label: "ISO 9001",
+  sub: "Quality",
+  color: "#2563EB"
+}, {
+  key: "iso14001",
+  label: "ISO 14001",
+  sub: "Environment",
+  color: "#16A34A"
+}, {
+  key: "iso45001",
+  label: "ISO 45001",
+  sub: "Safety",
+  color: "#EA580C"
+}, {
+  key: "ul",
+  label: "UL Certified",
+  sub: "Certified",
+  color: "#7C3AED"
+}, {
+  key: "other",
+  label: "Khác",
+  sub: "Other",
+  color: "#64748B"
+}];
+const CERT_MAX_BYTES = 700 * 1024; // ~700KB gốc (base64 ~1.37x → dưới giới hạn 1MB/document của Firestore)
+function CertificateAddModal({
+  onClose,
+  onAdd
+}) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState("iso9001");
+  const [note, setNote] = useState("");
+  const [file, setFile] = useState(null);
+  const [fileDataUri, setFileDataUri] = useState("");
+  const [fileMime, setFileMime] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  function handleFile(e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (f.size > CERT_MAX_BYTES) {
+      setErr(`File quá lớn (${(f.size / 1024).toFixed(0)}KB). Vui lòng chọn file dưới ${(CERT_MAX_BYTES / 1024).toFixed(0)}KB (ảnh chụp/scan nên nén trước khi tải lên).`);
+      setFile(null);
+      setFileDataUri("");
+      return;
+    }
+    setErr("");
+    setFile(f);
+    setFileMime(f.type);
+    const reader = new FileReader();
+    reader.onload = () => setFileDataUri(reader.result);
+    reader.readAsDataURL(f);
+    if (!name) setName(f.name.replace(/\.[^.]+$/, ""));
+  }
+  async function handleSubmit() {
+    if (!name.trim()) {
+      setErr("Vui lòng nhập tên chứng chỉ.");
+      return;
+    }
+    if (!fileDataUri) {
+      setErr("Vui lòng chọn file chứng chỉ (ảnh hoặc PDF).");
+      return;
+    }
+    setBusy(true);
+    try {
+      await onAdd({
+        name: name.trim(),
+        type,
+        note: note.trim(),
+        fileDataUri,
+        fileMime,
+        fileName: file ? file.name : ""
+      });
+      onClose();
+    } catch (e) {
+      setErr("Có lỗi khi lưu chứng chỉ: " + (e?.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: "Thêm chứng chỉ",
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Tên chứng chỉ"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "mes-input",
+    value: name,
+    onChange: e => setName(e.target.value),
+    placeholder: "ví dụ: Chứng nhận ISO 9001:2015"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Loại chứng chỉ"
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "mes-input",
+    value: type,
+    onChange: e => setType(e.target.value)
+  }, CERT_TYPES.map(t => /*#__PURE__*/React.createElement("option", {
+    key: t.key,
+    value: t.key
+  }, t.label)))), /*#__PURE__*/React.createElement(Field, {
+    label: "File chứng chỉ (ảnh hoặc PDF)"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*,application/pdf",
+    onChange: handleFile,
+    className: "mes-input"
+  }), fileDataUri && fileMime.startsWith("image/") && /*#__PURE__*/React.createElement("img", {
+    src: fileDataUri,
+    alt: "preview",
+    style: {
+      marginTop: 8,
+      maxWidth: "100%",
+      maxHeight: 160,
+      borderRadius: 8,
+      border: `1px solid ${COLORS.border}`
+    }
+  }), fileDataUri && fileMime === "application/pdf" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      fontSize: 12.5,
+      color: COLORS.textDim
+    }
+  }, /*#__PURE__*/React.createElement(FileSpreadsheet, {
+    size: 15
+  }), file?.name)), /*#__PURE__*/React.createElement(Field, {
+    label: "Ghi chú (tuỳ chọn)"
+  }, /*#__PURE__*/React.createElement("textarea", {
+    className: "mes-input",
+    rows: 2,
+    value: note,
+    onChange: e => setNote(e.target.value),
+    placeholder: "Ngày hiệu lực, đơn vị cấp,..."
+  })), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: COLORS.red,
+      fontSize: 12.5,
+      marginBottom: 10
+    }
+  }, err), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      justifyContent: "flex-end"
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    onClick: onClose
+  }, "Huỷ"), /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    onClick: handleSubmit,
+    disabled: busy
+  }, busy ? "Đang lưu..." : "Thêm chứng chỉ")));
+}
+function CertificatesPage({
+  certificates,
+  isAdmin,
+  currentUser,
+  onAdd,
+  onDelete
+}) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  async function handleAdd(cert) {
+    await onAdd({
+      ...cert,
+      uploadedBy: currentUser?.fullName || currentUser?.username || "—"
+    });
+  }
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
+    eyebrow: `${certificates.length} chứng chỉ`,
+    title: "Chứng nhận ISO - UL",
+    icon: AwardIcon,
+    iconColor: "#7C3AED",
+    action: /*#__PURE__*/React.createElement(Button, {
+      variant: "primary",
+      onClick: () => setShowAdd(true)
+    }, /*#__PURE__*/React.createElement(Plus, {
+      size: 14
+    }), " Thêm chứng chỉ")
+  }), certificates.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
+    icon: AwardIcon,
+    title: "Chưa có chứng chỉ nào",
+    hint: "Bấm \"Thêm chứng chỉ\" để tải lên chứng nhận ISO, UL của nhà máy"
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
+      gap: 16
+    }
+  }, certificates.map(c => {
+    const t = CERT_TYPES.find(x => x.key === c.type) || CERT_TYPES[4];
+    return /*#__PURE__*/React.createElement("div", {
+      key: c.id,
+      className: "mes-card",
+      style: {
+        padding: 0,
+        overflow: "hidden",
+        border: `1.5px solid ${t.color}55`,
+        borderTop: `4px solid ${t.color}`,
+        boxShadow: `0 2px 8px ${t.color}22`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 140,
+        background: COLORS.bgPanel2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden"
+      }
+    }, c.fileMime && c.fileMime.startsWith("image/") ? /*#__PURE__*/React.createElement("img", {
+      src: c.fileDataUri,
+      alt: c.name,
+      style: {
+        width: "100%",
+        height: "100%",
+        objectFit: "cover"
+      }
+    }) : /*#__PURE__*/React.createElement(FileSpreadsheet, {
+      size: 40,
+      color: t.color
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: 14
+      }
+    }, /*#__PURE__*/React.createElement(Badge, {
+      color: t.color
+    }, t.label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontWeight: 700,
+        marginTop: 8,
+        marginBottom: 4,
+        fontSize: 14
+      }
+    }, c.name), c.note && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: COLORS.textDim,
+        marginBottom: 6
+      }
+    }, c.note), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: COLORS.textFaint,
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", null, c.uploadedBy, " · ", (c.uploadedAt || "").slice(0, 10)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("a", {
+      href: c.fileDataUri,
+      download: c.fileName || c.name,
+      className: "mes-btn mes-btn-ghost",
+      style: {
+        padding: "4px 8px"
+      }
+    }, /*#__PURE__*/React.createElement(Download, {
+      size: 13
+    })), isAdmin && /*#__PURE__*/React.createElement("button", {
+      onClick: () => setConfirmDelete(c),
+      className: "mes-btn mes-btn-ghost",
+      style: {
+        padding: "4px 8px",
+        color: COLORS.red,
+        borderColor: COLORS.red
+      }
+    }, /*#__PURE__*/React.createElement(Trash2, {
+      size: 13
+    }))))));
+  })), showAdd && /*#__PURE__*/React.createElement(CertificateAddModal, {
+    onClose: () => setShowAdd(false),
+    onAdd: handleAdd
+  }), confirmDelete && /*#__PURE__*/React.createElement(Modal, {
+    title: "Xoá chứng chỉ",
+    onClose: () => setConfirmDelete(null)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, "Bạn có chắc muốn xoá chứng chỉ \"", confirmDelete.name, "\"?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      justifyContent: "flex-end"
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    onClick: () => setConfirmDelete(null)
+  }, "Huỷ"), /*#__PURE__*/React.createElement(Button, {
+    variant: "danger",
+    onClick: () => {
+      onDelete(confirmDelete.id);
+      setConfirmDelete(null);
+    }
+  }, "Xoá"))));
+}
 function AdminPage({
   users,
   auditLog,
@@ -11426,6 +11766,12 @@ function AppInner() {
     onImport: handleImportStaff,
     attendance: data.attendance,
     onAttendanceUpdate: handleAttendanceUpdate
+  }), activeTab === "certificates" && /*#__PURE__*/React.createElement(CertificatesPage, {
+    certificates: data.certificates,
+    isAdmin: isAdmin,
+    currentUser: currentUser,
+    onAdd: data.addCertificate,
+    onDelete: data.deleteCertificate
   }), activeTab === "reports" && /*#__PURE__*/React.createElement(ReportsPage, {
     orders: data.orders,
     machines: data.machines,
