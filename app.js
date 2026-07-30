@@ -11804,8 +11804,7 @@ function AppInner() {
 function GlobalStyle() {
   return /*#__PURE__*/React.createElement("style", null, `
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-    #root{zoom:1.3;}
-    .mes-login-shell{zoom:1;}
+    .mes-app-shell{zoom:1.3;}
     .mes-root{font-family:${FONT_BODY};}
     .mes-display{font-family:${FONT_DISPLAY};}
     .mes-mono{font-family:${FONT_MONO};}
