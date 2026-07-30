@@ -3976,8 +3976,17 @@ function LoginScreen({
       backgroundImage: `url(${LOGIN_FULL_BG_DATA_URI})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
-      filter: "blur(25px) brightness(.75) saturate(1.15)",
-      transform: "scale(1.08)"
+      filter: "blur(60px) brightness(.92) saturate(1.15)",
+      transform: "scale(1.25)"
+    }
+  }),
+  /* Viền chuyển tiếp mềm giữa ảnh nét và nền mờ, tránh cảm giác "cắt dán" */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      boxShadow: "inset 0 0 140px 40px rgba(10,30,60,.25)",
+      pointerEvents: "none"
     }
   }),
   /* Khối ảnh chính giữ NGUYÊN tỷ lệ gốc 1672:941 — đảm bảo khung đăng nhập luôn khớp đúng 100% vị trí */
@@ -3990,7 +3999,7 @@ function LoginScreen({
       backgroundImage: `url(${LOGIN_FULL_BG_DATA_URI})`,
       backgroundSize: "100% 100%",
       backgroundRepeat: "no-repeat",
-      boxShadow: "0 0 60px rgba(0,0,0,.45)"
+      boxShadow: "0 0 90px 20px rgba(5,15,35,.35)"
     }
   },
   /* Khung đăng nhập thật, đặt đúng vị trí % của khung trong ảnh maket */
@@ -4003,7 +4012,7 @@ function LoginScreen({
       width: "30.5%",
       height: "63.6%",
       overflowY: "auto",
-      background: "rgba(255,255,255,.98)",
+      background: "#FFFFFF",
       borderRadius: "1.6%",
       padding: "1.6% 1.9%",
       boxSizing: "border-box"
