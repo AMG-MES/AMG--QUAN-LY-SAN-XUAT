@@ -6499,12 +6499,42 @@ function ScrapAddModal({
     label: "Nguyên nhân"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 6,
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 14,
       marginBottom: 8
     }
-  }, SCRAP_REASONS.map(r => /*#__PURE__*/React.createElement("button", {
+  }, [{
+    label: "Lỗi Con Người",
+    match: "con người",
+    color: COLORS.blue
+  }, {
+    label: "Lỗi do máy",
+    match: "máy",
+    color: COLORS.orange
+  }].map(col => /*#__PURE__*/React.createElement("div", {
+    key: col.label
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: col.color,
+      textTransform: "uppercase",
+      letterSpacing: ".03em",
+      marginBottom: 6
+    }
+  }, col.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 6
+    }
+  }, SCRAP_REASONS.filter(r => {
+    const hasHuman = r.source.includes("con người");
+    const hasMachine = r.source.includes("máy");
+    if (!hasHuman && !hasMachine) return true; // nguyên nhân do vật liệu/quy trình -> hiện ở cả 2 cột
+    return col.match === "con người" ? hasHuman : hasMachine;
+  }).map(r => /*#__PURE__*/React.createElement("button", {
     key: r.name,
     type: "button",
     title: `${r.cause} (${r.source})`,
@@ -6522,7 +6552,7 @@ function ScrapAddModal({
       color: form.reason.startsWith(r.name) ? COLORS.copperBright : COLORS.textDim,
       fontWeight: form.reason.startsWith(r.name) ? 700 : 500
     }
-  }, r.name))), /*#__PURE__*/React.createElement("textarea", {
+  }, r.name)))))), /*#__PURE__*/React.createElement("textarea", {
     className: "mes-input",
     rows: 2,
     value: form.reason,
