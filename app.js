@@ -6746,6 +6746,14 @@ function QCPage({
     if (scrapExportPeriod === "month") return dateStr.slice(0, 7) === scrapExportDate.slice(0, 7);
     return true;
   }
+  const [scrapExportSource, setScrapExportSource] = useState("all");
+  function scrapMatchesSource(reason) {
+    if (scrapExportSource === "all") return true;
+    const r = reason || "";
+    if (scrapExportSource === "human") return r.includes("Lỗi Con Người") || r.includes("Con Người");
+    if (scrapExportSource === "machine") return r.includes("Lỗi do máy") || r.includes("do máy");
+    return true;
+  }
   function handleExportByMaterial() {
     if (!window.XLSX) {
       alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
@@ -6781,7 +6789,7 @@ function QCPage({
       alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
       return;
     }
-    const rows = sorted.filter(s => scrapInSelectedRange(s.date)).map(s => {
+    const rows = sorted.filter(s => scrapInSelectedRange(s.date) && scrapMatchesSource(s.reason)).map(s => {
       const stageInfo = STAGES.find(x => x.key === s.stage);
       return {
         "Ngày": fmtDate(s.date),
@@ -6815,7 +6823,8 @@ function QCPage({
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh sach phe lieu");
     const suffix = scrapExportPeriod === "day" ? scrapExportDate : scrapExportPeriod === "month" ? scrapExportDate.slice(0, 7) : "tat_ca";
-    XLSX.writeFile(wb, `danh_sach_phe_lieu_${suffix}.xlsx`);
+    const sourceSuffix = scrapExportSource === "human" ? "_do_nguoi" : scrapExportSource === "machine" ? "_do_may" : "";
+    XLSX.writeFile(wb, `danh_sach_phe_lieu_${suffix}${sourceSuffix}.xlsx`);
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Kiểm soát chất lượng",
@@ -7254,7 +7263,22 @@ function QCPage({
       padding: "6px 8px",
       width: 130
     }
-  }), /*#__PURE__*/React.createElement(Button, {
+  }), /*#__PURE__*/React.createElement("select", {
+    className: "mes-input",
+    value: scrapExportSource,
+    onChange: e => setScrapExportSource(e.target.value),
+    style: {
+      fontSize: 12.5,
+      padding: "6px 8px",
+      width: 140
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Tất cả loại lỗi"), /*#__PURE__*/React.createElement("option", {
+    value: "human"
+  }, "Do con người"), /*#__PURE__*/React.createElement("option", {
+    value: "machine"
+  }, "Do máy")), /*#__PURE__*/React.createElement(Button, {
     onClick: handleExportScrapList,
     style: {
       fontSize: 12.5,
