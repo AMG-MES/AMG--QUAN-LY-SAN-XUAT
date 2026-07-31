@@ -6540,7 +6540,7 @@ function ScrapAddModal({
     title: `${r.cause} (${r.source})`,
     onClick: () => setForm(f => ({
       ...f,
-      reason: `${r.name} — ${r.cause}`
+      reason: `${r.name} (${col.label}) — ${r.cause}`
     })),
     style: {
       fontSize: 11.5,
