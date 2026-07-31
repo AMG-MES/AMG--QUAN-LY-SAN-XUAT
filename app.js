@@ -6707,12 +6707,22 @@ function QCPage({
     };
   }, [scrap]);
   const sorted = [...scrap].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const [scrapExportPeriod, setScrapExportPeriod] = useState("all");
+  const [scrapExportDate, setScrapExportDate] = useState(() => new Date().toISOString().slice(0, 10));
+  function scrapInSelectedRange(dateStr) {
+    if (scrapExportPeriod === "all") return true;
+    if (!dateStr) return false;
+    if (scrapExportPeriod === "day") return dateStr.slice(0, 10) === scrapExportDate;
+    if (scrapExportPeriod === "month") return dateStr.slice(0, 7) === scrapExportDate.slice(0, 7);
+    return true;
+  }
   function handleExportByMaterial() {
     if (!window.XLSX) {
       alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
       return;
     }
-    const rows = byMaterialAndDate.rows.map(r => {
+    const filteredRows = byMaterialAndDate.rows.filter(r => scrapInSelectedRange(r.date));
+    const rows = filteredRows.map(r => {
       const row = {
         "Ngày": fmtDate(r.date)
       };
@@ -6726,21 +6736,22 @@ function QCPage({
       "Ngày": "Tổng cộng"
     };
     byMaterialAndDate.materials.forEach(m => {
-      totalRow[`Mã ${m} (kg)`] = byMaterialAndDate.byMaterialTotals[m];
+      totalRow[`Mã ${m} (kg)`] = filteredRows.reduce((a, r) => a + (r[m] || 0), 0);
     });
-    totalRow["Tổng ngày (kg)"] = Object.values(byMaterialAndDate.byMaterialTotals).reduce((a, v) => a + v, 0);
+    totalRow["Tổng ngày (kg)"] = filteredRows.reduce((a, r) => a + r.total, 0);
     rows.push(totalRow);
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Phe lieu theo ma NVL");
-    XLSX.writeFile(wb, `phe_lieu_theo_ma_nvl_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const suffix = scrapExportPeriod === "day" ? scrapExportDate : scrapExportPeriod === "month" ? scrapExportDate.slice(0, 7) : "tat_ca";
+    XLSX.writeFile(wb, `phe_lieu_theo_ma_nvl_${suffix}.xlsx`);
   }
   function handleExportScrapList() {
     if (!window.XLSX) {
       alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
       return;
     }
-    const rows = sorted.map(s => {
+    const rows = sorted.filter(s => scrapInSelectedRange(s.date)).map(s => {
       const stageInfo = STAGES.find(x => x.key === s.stage);
       return {
         "Ngày": fmtDate(s.date),
@@ -6773,7 +6784,8 @@ function QCPage({
     }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh sach phe lieu");
-    XLSX.writeFile(wb, `danh_sach_phe_lieu_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    const suffix = scrapExportPeriod === "day" ? scrapExportDate : scrapExportPeriod === "month" ? scrapExportDate.slice(0, 7) : "tat_ca";
+    XLSX.writeFile(wb, `danh_sach_phe_lieu_${suffix}.xlsx`);
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Kiểm soát chất lượng",
@@ -7051,7 +7063,42 @@ function QCPage({
       flexWrap: "wrap",
       alignItems: "center"
     }
-  }, /*#__PURE__*/React.createElement(Button, {
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "mes-input",
+    value: scrapExportPeriod,
+    onChange: e => setScrapExportPeriod(e.target.value),
+    style: {
+      fontSize: 12.5,
+      padding: "6px 8px",
+      width: 110
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Tất cả"), /*#__PURE__*/React.createElement("option", {
+    value: "day"
+  }, "Theo ngày"), /*#__PURE__*/React.createElement("option", {
+    value: "month"
+  }, "Theo tháng")), scrapExportPeriod === "day" && /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    className: "mes-input",
+    value: scrapExportDate,
+    onChange: e => setScrapExportDate(e.target.value),
+    style: {
+      fontSize: 12.5,
+      padding: "6px 8px",
+      width: 140
+    }
+  }), scrapExportPeriod === "month" && /*#__PURE__*/React.createElement("input", {
+    type: "month",
+    className: "mes-input",
+    value: scrapExportDate.slice(0, 7),
+    onChange: e => setScrapExportDate(e.target.value + "-01"),
+    style: {
+      fontSize: 12.5,
+      padding: "6px 8px",
+      width: 130
+    }
+  }), /*#__PURE__*/React.createElement(Button, {
     onClick: handleExportByMaterial,
     style: {
       fontSize: 12.5,
@@ -7135,7 +7182,49 @@ function QCPage({
       fontSize: 15,
       fontWeight: 700
     }
-  }, "Danh sách ghi nhận phế liệu"), /*#__PURE__*/React.createElement(Button, {
+  }, "Danh sách ghi nhận phế liệu"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("select", {
+    className: "mes-input",
+    value: scrapExportPeriod,
+    onChange: e => setScrapExportPeriod(e.target.value),
+    style: {
+      fontSize: 12.5,
+      padding: "6px 8px",
+      width: 110
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Tất cả"), /*#__PURE__*/React.createElement("option", {
+    value: "day"
+  }, "Theo ngày"), /*#__PURE__*/React.createElement("option", {
+    value: "month"
+  }, "Theo tháng")), scrapExportPeriod === "day" && /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    className: "mes-input",
+    value: scrapExportDate,
+    onChange: e => setScrapExportDate(e.target.value),
+    style: {
+      fontSize: 12.5,
+      padding: "6px 8px",
+      width: 140
+    }
+  }), scrapExportPeriod === "month" && /*#__PURE__*/React.createElement("input", {
+    type: "month",
+    className: "mes-input",
+    value: scrapExportDate.slice(0, 7),
+    onChange: e => setScrapExportDate(e.target.value + "-01"),
+    style: {
+      fontSize: 12.5,
+      padding: "6px 8px",
+      width: 130
+    }
+  }), /*#__PURE__*/React.createElement(Button, {
     onClick: handleExportScrapList,
     style: {
       fontSize: 12.5,
@@ -7143,7 +7232,7 @@ function QCPage({
     }
   }, /*#__PURE__*/React.createElement(Download, {
     size: 13
-  }), " Xuất Excel")), sorted.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
+  }), " Xuất Excel"))), sorted.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     icon: FlaskConical,
     title: "Chưa có dữ liệu phế liệu"
   }) : /*#__PURE__*/React.createElement("table", {
