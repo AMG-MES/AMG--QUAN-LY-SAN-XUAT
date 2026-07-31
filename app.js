@@ -6707,6 +6707,74 @@ function QCPage({
     };
   }, [scrap]);
   const sorted = [...scrap].sort((a, b) => new Date(b.date) - new Date(a.date));
+  function handleExportByMaterial() {
+    if (!window.XLSX) {
+      alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      return;
+    }
+    const rows = byMaterialAndDate.rows.map(r => {
+      const row = {
+        "Ngày": fmtDate(r.date)
+      };
+      byMaterialAndDate.materials.forEach(m => {
+        row[`Mã ${m} (kg)`] = r[m] || 0;
+      });
+      row["Tổng ngày (kg)"] = r.total;
+      return row;
+    });
+    const totalRow = {
+      "Ngày": "Tổng cộng"
+    };
+    byMaterialAndDate.materials.forEach(m => {
+      totalRow[`Mã ${m} (kg)`] = byMaterialAndDate.byMaterialTotals[m];
+    });
+    totalRow["Tổng ngày (kg)"] = Object.values(byMaterialAndDate.byMaterialTotals).reduce((a, v) => a + v, 0);
+    rows.push(totalRow);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Phe lieu theo ma NVL");
+    XLSX.writeFile(wb, `phe_lieu_theo_ma_nvl_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+  function handleExportScrapList() {
+    if (!window.XLSX) {
+      alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      return;
+    }
+    const rows = sorted.map(s => {
+      const stageInfo = STAGES.find(x => x.key === s.stage);
+      return {
+        "Ngày": fmtDate(s.date),
+        "Công đoạn": stageInfo ? stageInfo.label : s.stage,
+        "Khách hàng": s.customer || "",
+        "Quy cách": s.spec || "",
+        "Mã liệu": s.materialCode || "",
+        "Khối lượng (kg)": s.qty || 0,
+        "Nguyên nhân": s.reason || "",
+        "Người ghi": s.recordedBy || ""
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{
+      wch: 12
+    }, {
+      wch: 14
+    }, {
+      wch: 20
+    }, {
+      wch: 14
+    }, {
+      wch: 10
+    }, {
+      wch: 14
+    }, {
+      wch: 45
+    }, {
+      wch: 14
+    }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sach phe lieu");
+    XLSX.writeFile(wb, `danh_sach_phe_lieu_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: "Kiểm soát chất lượng",
     title: "Phế liệu & chất lượng sản phẩm",
@@ -6980,9 +7048,18 @@ function QCPage({
     style: {
       display: "flex",
       gap: 8,
-      flexWrap: "wrap"
+      flexWrap: "wrap",
+      alignItems: "center"
     }
-  }, byMaterialAndDate.materials.map(m => /*#__PURE__*/React.createElement(Badge, {
+  }, /*#__PURE__*/React.createElement(Button, {
+    onClick: handleExportByMaterial,
+    style: {
+      fontSize: 12.5,
+      padding: "6px 10px"
+    }
+  }, /*#__PURE__*/React.createElement(Download, {
+    size: 13
+  }), " Xuất Excel"), byMaterialAndDate.materials.map(m => /*#__PURE__*/React.createElement(Badge, {
     key: m,
     color: m === "Khác" ? COLORS.textFaint : COLORS.copper
   }, "Mã ", m, ": ", fmtNum(byMaterialAndDate.byMaterialTotals[m]), " kg")))), /*#__PURE__*/React.createElement("table", {
@@ -7045,7 +7122,28 @@ function QCPage({
       borderTop: `4px solid #0D9488`,
       boxShadow: `0 2px 8px #0D948822`
     }
-  }, sorted.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
+  }, sorted.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "14px 18px 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-display",
+    style: {
+      fontSize: 15,
+      fontWeight: 700
+    }
+  }, "Danh sách ghi nhận phế liệu"), /*#__PURE__*/React.createElement(Button, {
+    onClick: handleExportScrapList,
+    style: {
+      fontSize: 12.5,
+      padding: "6px 10px"
+    }
+  }, /*#__PURE__*/React.createElement(Download, {
+    size: 13
+  }), " Xuất Excel")), sorted.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
     icon: FlaskConical,
     title: "Chưa có dữ liệu phế liệu"
   }) : /*#__PURE__*/React.createElement("table", {
@@ -12210,6 +12308,7 @@ function GlobalStyle() {
   return /*#__PURE__*/React.createElement("style", null, `
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
     .mes-app-shell{zoom:1.3;}
+    .mes-modal-card{zoom:0.77;}
     .mes-root{font-family:${FONT_BODY};}
     .mes-display{font-family:${FONT_DISPLAY};}
     .mes-mono{font-family:${FONT_MONO};}
@@ -12383,7 +12482,7 @@ function Modal({ title, onClose, width = 520, children }) {
     },
     onClick: e => { if (e.target === e.currentTarget && onClose) onClose(); }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "mes-card mes-fade-in",
+    className: "mes-card mes-fade-in mes-modal-card",
     style: {
       width: "100%",
       maxWidth: width,
