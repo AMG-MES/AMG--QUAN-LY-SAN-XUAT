@@ -6324,10 +6324,21 @@ function ScrapAddModal({
   onClose,
   onSave,
   currentUser,
-  orders
+  orders,
+  editRecord
 }) {
+  const isEdit = !!editRecord;
   const defaultStage = currentUser?.team && TEAM_STAGE_OPTIONS[currentUser.team]?.[0] || STAGES[0].key;
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => editRecord ? {
+    date: (editRecord.date || "").slice(0, 10) || new Date().toISOString().slice(0, 10),
+    stage: editRecord.stage || defaultStage,
+    spec: editRecord.spec || "",
+    customer: editRecord.customer || "",
+    materialCode: editRecord.materialCode || "",
+    qty: editRecord.qty != null ? String(editRecord.qty) : "",
+    unit: editRecord.unit || "kg",
+    reason: editRecord.reason || ""
+  } : {
     date: new Date().toISOString().slice(0, 10),
     stage: defaultStage,
     spec: "",
@@ -6353,16 +6364,24 @@ function ScrapAddModal({
   }
   function submit() {
     if (!form.qty || parseFloat(form.qty) <= 0) return;
-    onSave({
-      ...form,
-      id: uid("PL"),
-      qty: parseFloat(form.qty),
-      recordedBy: currentUser.username
-    });
+    if (isEdit) {
+      onSave({
+        ...editRecord,
+        ...form,
+        qty: parseFloat(form.qty)
+      });
+    } else {
+      onSave({
+        ...form,
+        id: uid("PL"),
+        qty: parseFloat(form.qty),
+        recordedBy: currentUser.username
+      });
+    }
     onClose();
   }
   return /*#__PURE__*/React.createElement(Modal, {
-    title: "Ghi nhận phế liệu",
+    title: isEdit ? "Sửa ghi nhận phế liệu" : "Ghi nhận phế liệu",
     onClose: onClose,
     width: 460
   }, /*#__PURE__*/React.createElement(Field, {
@@ -6444,10 +6463,9 @@ function ScrapAddModal({
     key: s,
     value: s
   })))), /*#__PURE__*/React.createElement(Field, {
-    label: "Mã liệu (A/B/C...)"
-  }, /*#__PURE__*/React.createElement("input", {
+    label: "Mã liệu (A/B/C)"
+  }, /*#__PURE__*/React.createElement("select", {
     className: "mes-input",
-    list: "mes-scrap-materials",
     value: form.materialCode,
     onChange: e => {
       setOrderId("");
@@ -6455,14 +6473,13 @@ function ScrapAddModal({
         ...f,
         materialCode: e.target.value
       }));
-    },
-    placeholder: "A / B / C..."
-  }), /*#__PURE__*/React.createElement("datalist", {
-    id: "mes-scrap-materials"
-  }, materialCodes.map(m => /*#__PURE__*/React.createElement("option", {
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Chọn mã liệu —"), ["A", "B", "C"].map(m => /*#__PURE__*/React.createElement("option", {
     key: m,
     value: m
-  })))), /*#__PURE__*/React.createElement(Field, {
+  }, m)))), /*#__PURE__*/React.createElement(Field, {
     label: "Khối lượng phế liệu"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -6570,13 +6587,14 @@ function ScrapAddModal({
     }
   }, /*#__PURE__*/React.createElement(Save, {
     size: 14
-  }), " Lưu ghi nhận"));
+  }), isEdit ? " Lưu thay đổi" : " Lưu ghi nhận"));
 }
 function QCPage({
   scrap,
   isAdmin,
   currentUser,
   onAdd,
+  onUpdate,
   onDelete,
   orders,
   auditLog
@@ -6585,6 +6603,7 @@ function QCPage({
     askConfirm
   } = useDialog();
   const [showAdd, setShowAdd] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [exportPeriod, setExportPeriod] = useState("day");
   const [exportDate, setExportDate] = useState(() => new Date().toISOString().slice(0, 10));
   function getExportRange() {
@@ -7318,7 +7337,16 @@ function QCPage({
       color: COLORS.textFaint,
       fontSize: 12
     }
-  }, s.recordedBy), isAdmin && /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(IconButton, {
+  }, s.recordedBy), isAdmin && /*#__PURE__*/React.createElement("td", {
+    style: {
+      display: "flex",
+      gap: 4
+    }
+  }, /*#__PURE__*/React.createElement(IconButton, {
+    icon: Pencil,
+    onClick: () => setEditingRecord(s),
+    title: "Sửa"
+  }), /*#__PURE__*/React.createElement(IconButton, {
     icon: Trash2,
     danger: true,
     onClick: async () => {
@@ -7333,6 +7361,12 @@ function QCPage({
     orders: orders,
     onClose: () => setShowAdd(false),
     onSave: onAdd
+  }), editingRecord && /*#__PURE__*/React.createElement(ScrapAddModal, {
+    currentUser: currentUser,
+    orders: orders,
+    editRecord: editingRecord,
+    onClose: () => setEditingRecord(null),
+    onSave: onUpdate
   }));
 }
 
@@ -12199,6 +12233,14 @@ function AppInner() {
     await db.collection(FS.scrap).doc(id).delete();
     audit("scrap_add", `Xóa ghi nhận phế liệu ${id}`, id);
   }
+  async function handleUpdateScrap(rec) {
+    // onSnapshot keeps data.scrap fresh
+    await db.collection(FS.scrap).doc(rec.id).update({
+      ...rec,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    audit("scrap_add", `Sửa ghi nhận phế liệu ${fmtNum(rec.qty)}${rec.unit} tại công đoạn "${STAGE_MAP[rec.stage]?.label}"${rec.customer ? " — " + rec.customer : ""}`, rec.id);
+  }
   async function handleAddStaff(s) {
     // onSnapshot keeps data.staff fresh
     await db.collection(FS.staff).doc(s.id).set({
@@ -12395,6 +12437,7 @@ function AppInner() {
     isAdmin: isAdmin,
     currentUser: currentUser,
     onAdd: handleAddScrap,
+    onUpdate: handleUpdateScrap,
     onDelete: handleDeleteScrap,
     orders: data.orders,
     auditLog: data.auditLog
