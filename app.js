@@ -4003,8 +4003,9 @@ function LoginScreen({
       position: "relative"
     }
   }, /*#__PURE__*/React.createElement(GlobalStyle, null),
-  /* Lớp nền mờ lấp đầy toàn màn hình bằng chính ảnh (tránh dải trống khi tỉ lệ màn hình khác ảnh gốc) */
+  /* Lớp nền mờ lấp đầy toàn màn hình bằng chính ảnh (tránh dải trống khi tỉ lệ màn hình khác ảnh gốc) — chỉ hiện trên máy tính */
   /*#__PURE__*/React.createElement("div", {
+    className: "mes-login-blur-bg",
     style: {
       position: "absolute",
       inset: 0,
@@ -4015,8 +4016,9 @@ function LoginScreen({
       transform: "scale(1.25)"
     }
   }),
-  /* Viền chuyển tiếp mềm giữa ảnh nét và nền mờ, tránh cảm giác "cắt dán" */
+  /* Viền chuyển tiếp mềm giữa ảnh nét và nền mờ, tránh cảm giác "cắt dán" — chỉ hiện trên máy tính */
   /*#__PURE__*/React.createElement("div", {
+    className: "mes-login-vignette",
     style: {
       position: "absolute",
       inset: 0,
@@ -4024,8 +4026,9 @@ function LoginScreen({
       pointerEvents: "none"
     }
   }),
-  /* Khối ảnh chính giữ NGUYÊN tỷ lệ gốc 1672:941 — đảm bảo khung đăng nhập luôn khớp đúng 100% vị trí */
+  /* Khối ảnh chính giữ NGUYÊN tỷ lệ gốc 1672:941 trên máy tính — trên điện thoại chuyển thành khung trơn */
   /*#__PURE__*/React.createElement("div", {
+    className: "mes-login-hero",
     style: {
       position: "relative",
       width: "min(100vw, calc(100vh * 1672 / 941))",
@@ -4037,9 +4040,9 @@ function LoginScreen({
       boxShadow: "0 0 90px 20px rgba(5,15,35,.35)"
     }
   },
-  /* Khung đăng nhập thật, đặt đúng vị trí % của khung trong ảnh maket */
+  /* Khung đăng nhập thật, đặt đúng vị trí % của khung trong ảnh maket trên máy tính — full-width trên điện thoại */
   /*#__PURE__*/React.createElement("div", {
-    className: "mes-fade-in",
+    className: "mes-fade-in mes-login-card",
     style: {
       position: "absolute",
       left: "60.4%",
@@ -12493,8 +12496,9 @@ function AppInner() {
 function GlobalStyle() {
   return /*#__PURE__*/React.createElement("style", null, `
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-    .mes-app-shell{zoom:1.3;}
-    .mes-modal-card{zoom:0.77;}
+    @media (min-width: 861px) { .mes-app-shell{zoom:1.3;} }
+    .mes-modal-card{zoom:1;}
+    @media (min-width: 861px) { .mes-modal-card{zoom:0.77;} }
     .mes-root{font-family:${FONT_BODY};}
     .mes-display{font-family:${FONT_DISPLAY};}
     .mes-mono{font-family:${FONT_MONO};}
@@ -12525,6 +12529,34 @@ function GlobalStyle() {
     .mes-sidebar-overlay{display:none;}
 
     @media (max-width: 860px){
+      /* Màn hình đăng nhập: bỏ ảnh nền tỷ lệ ngang (chỉ hợp máy tính), chuyển thành khung gọn dễ thao tác */
+      .mes-login-shell{
+        background: linear-gradient(160deg, #0A2A52, #1a3d6e) !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        padding: 28px 16px !important;
+      }
+      .mes-login-blur-bg, .mes-login-vignette{ display:none !important; }
+      .mes-login-hero{
+        width: 100% !important;
+        max-width: 440px !important;
+        aspect-ratio: auto !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        margin: 0 auto !important;
+        position: static !important;
+      }
+      .mes-login-card{
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        border-radius: 18px !important;
+      }
       /* Sidebar trở thành ngăn kéo (drawer) trượt từ trái, ẩn theo mặc định */
       .mes-sidebar{
         position:fixed !important;
