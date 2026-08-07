@@ -3752,8 +3752,8 @@ function useAppData() {
       // Giữ lại đúng 365 ngày gần nhất (không giới hạn số lượng bản ghi trong khoảng đó)
       const cutoff = Date.now() - 365 * 24 * 60 * 60 * 1000;
       const list = s.docs.map(d => ({
-        id: d.id,
-        ...d.data()
+        ...d.data(),
+        id: d.id
       })).filter(a => {
         const t = a.ts && typeof a.ts.toMillis === "function" ? a.ts.toMillis() : new Date(a.ts || 0).getTime();
         return isNaN(t) || t >= cutoff; // giữ lại cả bản ghi chưa có ts hợp lệ (tránh mất dữ liệu cũ vì lỗi định dạng)
@@ -12194,8 +12194,9 @@ function AppInner() {
   // Alias dùng trong các handler bên dưới (đơn hàng luôn lấy từ dữ liệu mới nhất qua onSnapshot)
   const baseOrders = data.orders;
   function audit(type, detail, targetId, extra) {
-    db.collection(FS.audit).add({
-      id: uid("AL"),
+    const id = uid("AL");
+    db.collection(FS.audit).doc(id).set({
+      id,
       type,
       detail,
       targetId,
