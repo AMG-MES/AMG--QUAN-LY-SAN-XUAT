@@ -12279,20 +12279,15 @@ function AppInner() {
       return updated;
     });
     await data.persistOrders(nextOrders);
-    const nextLog = freshLog.map(e => e.id === entryId ? {
-      ...e,
+    await db.collection(FS.audit).doc(entryId).set({
       qty: newQty,
       materialCode: newMaterialCode,
       wireType: newWireType,
       date: newDate,
-      detail: e.detail.replace(/^Nhập [\d.,]+/, `Nhập ${fmtNum(newQty)}`) + " (đã chỉnh sửa)"
-    } : e);
-    await Promise.all(data.auditLog.slice(0, 10).map(e => db.collection(FS.audit).doc(e.id).set({
-      ...e,
-      ts: e.ts || firebase.firestore.FieldValue.serverTimestamp()
+      detail: entry.detail.replace(/^Nhập [\d.,]+/, `Nhập ${fmtNum(newQty)}`) + " (đã chỉnh sửa)"
     }, {
       merge: true
-    })));
+    });
     audit("production_entry_edit", `Chỉnh sửa lượt nhập: ${entry.customer} / ${entry.spec} — ${fmtNum(entry.qty)} → ${fmtNum(newQty)}`, entry.targetId);
   }
   async function handleDeleteProductionEntry(entryId) {
