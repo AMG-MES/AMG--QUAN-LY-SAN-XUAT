@@ -9701,7 +9701,7 @@ function ReportsPage({
   }, "Tất cả khách hàng"), customers.map(c => /*#__PURE__*/React.createElement("option", {
     key: c,
     value: c
-  }, c))))), /*#__PURE__*/React.createElement("div", {
+  }, c))))), isStageVisible("keo_trung") && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 16
     }
