@@ -3480,30 +3480,31 @@ function fmtNum(n) {
     maximumFractionDigits: 1
   });
 }
+function _toJsDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) return val;
+  if (typeof val.toDate === "function") return val.toDate(); // Firestore Timestamp
+  if (typeof val.seconds === "number") return new Date(val.seconds * 1000); // Timestamp dạng {seconds,nanoseconds}
+  const d = new Date(val);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 function fmtDate(iso) {
   if (!iso) return "—";
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleDateString("vi-VN");
-  } catch {
-    return iso;
-  }
+  const d = _toJsDate(iso);
+  if (!d) return typeof iso === "string" ? iso : "—";
+  return d.toLocaleDateString("vi-VN");
 }
 function fmtDateTime(iso) {
   if (!iso) return "—";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric"
-    });
-  } catch {
-    return iso;
-  }
+  const d = _toJsDate(iso);
+  if (!d) return typeof iso === "string" ? iso : "—";
+  return d.toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
 }
 function uid(prefix) {
   return prefix + "-" + Math.random().toString(36).slice(2, 9);
@@ -4765,8 +4766,14 @@ function ProductionPipeline({
 function QuickEntryForm({
   currentUser,
   orders,
-  onSubmit
+  auditLog,
+  onSubmit,
+  onEditEntry,
+  onDeleteEntry
 }) {
+  const {
+    askConfirm
+  } = useDialog();
   // Kéo trung có trang riêng — không hiện trong form này
   const allStages = TEAM_STAGE_OPTIONS[currentUser.team] || STAGES.map(s => s.key);
   const teamStages = allStages.filter(k => k !== "keo_trung");
@@ -4775,6 +4782,9 @@ function QuickEntryForm({
   const [qty, setQty] = useState("");
   const [note, setNote] = useState("Ca ngày");
   const [msg, setMsg] = useState("");
+  const [showEntries, setShowEntries] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const entries = useMemo(() => (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === stageKey && a.date && typeof a.qty === "number").sort((a, b) => new Date(b.date) - new Date(a.date)), [auditLog, stageKey]);
   const eligibleOrders = useMemo(() => orders.filter(o => getApplicableStages(o).includes(stageKey)), [orders, stageKey]);
   useEffect(() => {
     if (!eligibleOrders.find(o => o.id === orderId)) setOrderId(eligibleOrders[0]?.id || "");
@@ -4921,11 +4931,107 @@ function QuickEntryForm({
     }
   }, /*#__PURE__*/React.createElement(Save, {
     size: 14
-  }), " Ghi nhận sản lượng"));
+  }), " Ghi nhận sản lượng"), (onEditEntry || onDeleteEntry) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      paddingTop: 14,
+      borderTop: `1px solid ${COLORS.border}`
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowEntries(o => !o),
+    className: "mes-btn",
+    style: {
+      width: "100%",
+      justifyContent: "space-between",
+      borderColor: COLORS.border,
+      background: "transparent",
+      padding: "8px 12px"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      fontWeight: 700
+    }
+  }, /*#__PURE__*/React.createElement(History, {
+    size: 15,
+    color: COLORS.blue
+  }), " Lịch sử nhập ", STAGE_MAP[stageKey]?.label, " (", entries.length, " lượt)"), showEntries ? /*#__PURE__*/React.createElement(ChevronUp, {
+    size: 15
+  }) : /*#__PURE__*/React.createElement(ChevronDown, {
+    size: 15
+  })), showEntries && /*#__PURE__*/React.createElement("div", {
+    className: "mes-scroll-x",
+    style: {
+      maxHeight: 320,
+      overflowY: "auto",
+      marginTop: 12
+    }
+  }, entries.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
+    icon: History,
+    title: "Chưa có lượt nhập"
+  }) : /*#__PURE__*/React.createElement("table", {
+    className: "mes-table"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Ngày"), /*#__PURE__*/React.createElement("th", null, "Khách hàng / Quy cách"), /*#__PURE__*/React.createElement("th", null, "Mã liệu"), /*#__PURE__*/React.createElement("th", {
+    style: {
+      textAlign: "right"
+    }
+  }, "Số lượng"), /*#__PURE__*/React.createElement("th", null, "Ca"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, entries.map(e => /*#__PURE__*/React.createElement("tr", {
+    key: e.id
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "mes-mono"
+  }, fmtDate(e.date)), /*#__PURE__*/React.createElement("td", null, e.customer, " / ", e.spec), /*#__PURE__*/React.createElement("td", {
+    style: {
+      fontWeight: 700
+    }
+  }, e.materialCode || "—"), /*#__PURE__*/React.createElement("td", {
+    className: "mes-mono",
+    style: {
+      textAlign: "right",
+      fontWeight: 700,
+      color: COLORS.copperBright
+    }
+  }, fmtNum(e.qty), " kg"), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: COLORS.textFaint
+    }
+  }, e.note || "—"), /*#__PURE__*/React.createElement("td", {
+    style: {
+      display: "flex",
+      gap: 4
+    }
+  }, onEditEntry && /*#__PURE__*/React.createElement(IconButton, {
+    icon: Pencil,
+    onClick: () => setEditingEntry(e),
+    title: "Sửa"
+  }), onDeleteEntry && /*#__PURE__*/React.createElement(IconButton, {
+    icon: Trash2,
+    danger: true,
+    onClick: async () => {
+      if (await askConfirm(`Xóa lượt nhập ${fmtNum(e.qty)} kg — ${e.customer} / ${e.spec}?`, {
+        danger: true,
+        confirmLabel: "Xóa"
+      })) onDeleteEntry(e.id);
+    },
+    title: "Xóa"
+  })))))))), editingEntry && /*#__PURE__*/React.createElement(ProductionEntryEditModal, {
+    entry: editingEntry,
+    onClose: () => setEditingEntry(null),
+    onSave: onEditEntry
+  }));
 }
 function ActivityFeed({
-  auditLog
+  auditLog,
+  scrap,
+  orders,
+  currentUser,
+  isAdmin,
+  onUpdateScrap,
+  onEditProductionEntry
 }) {
+  const [editingScrap, setEditingScrap] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
   // Kéo trung có mục "Lịch sử nhập Kéo trung" riêng ở dưới — không lặp lại ở đây
   const relevant = auditLog.filter(a => (a.type === "production_entry" && a.stageKey !== "keo_trung") || a.type === "scrap_add").slice(0, 8);
   return /*#__PURE__*/React.createElement("div", {
@@ -4960,35 +5066,63 @@ function ActivityFeed({
       flexDirection: "column",
       gap: 10
     }
-  }, relevant.map(a => /*#__PURE__*/React.createElement("div", {
-    key: a.id,
-    style: {
-      display: "flex",
-      gap: 10,
-      fontSize: 12.5
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 6,
-      height: 6,
-      borderRadius: 999,
-      background: a.type === "scrap_add" ? COLORS.red : COLORS.green,
-      marginTop: 5,
-      flexShrink: 0
-    }
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: COLORS.text
-    }
-  }, a.detail), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: COLORS.textFaint,
-      fontSize: 11
-    }
-  }, a.user, " · ", fmtDateTime(a.ts)))))));
+  }, relevant.map(a => {
+    const isScrap = a.type === "scrap_add";
+    const isDeleted = (a.detail || "").startsWith("Xóa");
+    const scrapRecord = isScrap ? (scrap || []).find(s => s.id === a.targetId) : null;
+    const canEditScrap = isAdmin && isScrap && !isDeleted && scrapRecord && onUpdateScrap;
+    const canEditProduction = isAdmin && !isScrap && a.type === "production_entry" && onEditProductionEntry && a.id;
+    return /*#__PURE__*/React.createElement("div", {
+      key: a.id,
+      style: {
+        display: "flex",
+        gap: 10,
+        fontSize: 12.5,
+        alignItems: "flex-start"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 6,
+        height: 6,
+        borderRadius: 999,
+        background: isScrap ? COLORS.red : COLORS.green,
+        marginTop: 5,
+        flexShrink: 0
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: COLORS.text
+      }
+    }, a.detail), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: COLORS.textFaint,
+        fontSize: 11
+      }
+    }, a.user, " · ", fmtDateTime(a.ts))), (canEditScrap || canEditProduction) && /*#__PURE__*/React.createElement(IconButton, {
+      icon: Pencil,
+      title: "Sửa",
+      onClick: () => canEditScrap ? setEditingScrap(scrapRecord) : setEditingEntry(a)
+    }));
+  })), editingScrap && /*#__PURE__*/React.createElement(ScrapAddModal, {
+    currentUser: currentUser,
+    orders: orders,
+    editRecord: editingScrap,
+    onClose: () => setEditingScrap(null),
+    onSave: rec => onUpdateScrap(rec)
+  }), editingEntry && /*#__PURE__*/React.createElement(ProductionEntryEditModal, {
+    entry: editingEntry,
+    onClose: () => setEditingEntry(null),
+    onSave: onEditProductionEntry
+  }));
 }
 function DashboardPage({
   currentUser,
+  isAdmin,
   orders,
   machines,
   staff,
@@ -4997,7 +5131,8 @@ function DashboardPage({
   onQuickEntry,
   onKeoTrungEntry,
   onEditKeoTrung,
-  onDeleteKeoTrung
+  onDeleteKeoTrung,
+  onUpdateScrap
 }) {
   const stageTotals = useMemo(() => {
     const t = {};
@@ -5074,9 +5209,18 @@ function DashboardPage({
   }, /*#__PURE__*/React.createElement(QuickEntryForm, {
     currentUser: currentUser,
     orders: orders,
-    onSubmit: onQuickEntry
+    auditLog: auditLog,
+    onSubmit: onQuickEntry,
+    onEditEntry: isAdmin ? onEditKeoTrung : undefined,
+    onDeleteEntry: isAdmin ? onDeleteKeoTrung : undefined
   }), /*#__PURE__*/React.createElement(ActivityFeed, {
-    auditLog: auditLog
+    auditLog: auditLog,
+    scrap: scrap,
+    orders: orders,
+    currentUser: currentUser,
+    isAdmin: isAdmin,
+    onUpdateScrap: onUpdateScrap,
+    onEditProductionEntry: onEditKeoTrung
   })), (currentUser.role === "admin" || currentUser.team === "KÉO") && /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: `2px solid ${COLORS.border}`,
@@ -11926,6 +12070,55 @@ function AppInner() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [kioskMode, setKioskMode] = useState(false);
+  const KIOSK_IDLE_MS = 5 * 60 * 1000; // 5 phút không thao tác -> vào chế độ trình chiếu
+  const KIOSK_STEP_MS = 60 * 1000; // mỗi mục hiển thị 60 giây
+  const KIOSK_TABS = ["dashboard", "orders", "machines", "qc", "reports", "staff"];
+  const kioskPrevTab = React.useRef("dashboard");
+  const kioskStepIndex = React.useRef(0);
+  const activeTabRef = React.useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+  const kioskModeRef = React.useRef(false);
+  useEffect(() => {
+    kioskModeRef.current = kioskMode;
+  }, [kioskMode]);
+  useEffect(() => {
+    if (!currentUser) return;
+    let idleTimer = null;
+    const resetIdleTimer = () => {
+      if (kioskModeRef.current) {
+        // Có người thao tác trong lúc đang trình chiếu -> thoát ngay, quay lại trang trước đó
+        setKioskMode(false);
+        setActiveTab(kioskPrevTab.current);
+      }
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        kioskPrevTab.current = activeTabRef.current;
+        kioskStepIndex.current = 0;
+        setKioskMode(true);
+        setActiveTab(KIOSK_TABS[0]);
+      }, KIOSK_IDLE_MS);
+    };
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "wheel"];
+    events.forEach(ev => window.addEventListener(ev, resetIdleTimer, {
+      passive: true
+    }));
+    resetIdleTimer();
+    return () => {
+      clearTimeout(idleTimer);
+      events.forEach(ev => window.removeEventListener(ev, resetIdleTimer));
+    };
+  }, [currentUser]); // eslint-disable-line
+  useEffect(() => {
+    if (!kioskMode) return;
+    const t = setInterval(() => {
+      kioskStepIndex.current = (kioskStepIndex.current + 1) % KIOSK_TABS.length;
+      setActiveTab(KIOSK_TABS[kioskStepIndex.current]);
+    }, KIOSK_STEP_MS);
+    return () => clearInterval(t);
+  }, [kioskMode]); // eslint-disable-line
   useEffect(() => {
     if (!data.ready || !currentUser) return;
     const t = setInterval(() => {
@@ -12393,7 +12586,28 @@ function AppInner() {
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/React.createElement(TopBar, {
+  }, kioskMode && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 5000,
+      background: `linear-gradient(90deg, ${COLORS.copper}, ${COLORS.copperDark})`,
+      color: "#fff",
+      padding: "8px 18px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      fontSize: 13,
+      fontWeight: 700,
+      boxShadow: "0 2px 10px rgba(0,0,0,.25)"
+    }
+  }, /*#__PURE__*/React.createElement(RefreshCw, {
+    size: 15,
+    className: "pulse-dot"
+  }), "Chế độ trình chiếu tự động — ", pageTitles[activeTab], " · Chạm màn hình để thoát"), /*#__PURE__*/React.createElement(TopBar, {
     currentUser: currentUser,
     onLogout: () => setCurrentUser(null),
     pageTitle: pageTitles[activeTab],
@@ -12408,6 +12622,7 @@ function AppInner() {
     }
   }, activeTab === "dashboard" && /*#__PURE__*/React.createElement(DashboardPage, {
     currentUser: currentUser,
+    isAdmin: isAdmin,
     orders: data.orders,
     machines: data.machines,
     staff: data.staff,
@@ -12416,7 +12631,8 @@ function AppInner() {
     onQuickEntry: handleQuickEntry,
     onKeoTrungEntry: handleKeoTrungEntry,
     onEditKeoTrung: handleEditProductionEntry,
-    onDeleteKeoTrung: handleDeleteProductionEntry
+    onDeleteKeoTrung: handleDeleteProductionEntry,
+    onUpdateScrap: handleUpdateScrap
   }), activeTab === "orders" && /*#__PURE__*/React.createElement(OrdersPage, {
     orders: data.orders,
     auditLog: data.auditLog,
