@@ -1233,6 +1233,13 @@ const TEAM_STAGE_OPTIONS = {
   "MẠ THIẾC": ["ma_thiec"],
   "BỆN": ["ben"]
 };
+// Dùng cho trang Báo cáo & Biểu đồ: tổ KÉO quản lý cả 3 khâu kéo (trung/tinh/siêu tinh)
+const TEAM_REPORT_STAGES = {
+  "KÉO": ["keo_trung", "keo_tinh", "keo_sieu_tinh"],
+  "Ủ NHIỆT": ["u_nhiet"],
+  "MẠ THIẾC": ["ma_thiec"],
+  "BỆN": ["ben"]
+};
 // Danh sách lỗi chung của xưởng — theo bảng phân loại lỗi chuẩn (chọn nhanh thay vì gõ tay)
 const SCRAP_REASONS = [{
   name: "Đen dây",
@@ -4766,14 +4773,9 @@ function ProductionPipeline({
 function QuickEntryForm({
   currentUser,
   orders,
-  auditLog,
   onSubmit,
-  onEditEntry,
-  onDeleteEntry
+  onStageChange
 }) {
-  const {
-    askConfirm
-  } = useDialog();
   // Kéo trung có trang riêng — không hiện trong form này
   const allStages = TEAM_STAGE_OPTIONS[currentUser.team] || STAGES.map(s => s.key);
   const teamStages = allStages.filter(k => k !== "keo_trung");
@@ -4782,12 +4784,12 @@ function QuickEntryForm({
   const [qty, setQty] = useState("");
   const [note, setNote] = useState("Ca ngày");
   const [msg, setMsg] = useState("");
-  const [showEntries, setShowEntries] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null);
-  const entries = useMemo(() => (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === stageKey && a.date && typeof a.qty === "number").sort((a, b) => new Date(b.date) - new Date(a.date)), [auditLog, stageKey]);
   const eligibleOrders = useMemo(() => orders.filter(o => getApplicableStages(o).includes(stageKey)), [orders, stageKey]);
   useEffect(() => {
     if (!eligibleOrders.find(o => o.id === orderId)) setOrderId(eligibleOrders[0]?.id || "");
+  }, [stageKey]); // eslint-disable-line
+  useEffect(() => {
+    onStageChange && onStageChange(stageKey);
   }, [stageKey]); // eslint-disable-line
 
   function handleSubmit() {
@@ -4931,11 +4933,29 @@ function QuickEntryForm({
     }
   }, /*#__PURE__*/React.createElement(Save, {
     size: 14
-  }), " Ghi nhận sản lượng"), (onEditEntry || onDeleteEntry) && /*#__PURE__*/React.createElement("div", {
+  }), " Ghi nhận sản lượng"));
+}
+function StageHistorySection({
+  stageKey,
+  auditLog,
+  onEditEntry,
+  onDeleteEntry
+}) {
+  const {
+    askConfirm
+  } = useDialog();
+  const [showEntries, setShowEntries] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const entries = useMemo(() => (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === stageKey && a.date && typeof a.qty === "number").sort((a, b) => new Date(b.date) - new Date(a.date)), [auditLog, stageKey]);
+  if (!onEditEntry && !onDeleteEntry) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mes-card",
     style: {
-      marginTop: 16,
-      paddingTop: 14,
-      borderTop: `1px solid ${COLORS.border}`
+      marginTop: 18,
+      padding: 18,
+      border: `1.5px solid ${COLORS.blue}55`,
+      borderTop: `4px solid ${COLORS.blue}`,
+      boxShadow: `0 2px 8px ${COLORS.blue}22`
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowEntries(o => !o),
@@ -4964,7 +4984,7 @@ function QuickEntryForm({
   })), showEntries && /*#__PURE__*/React.createElement("div", {
     className: "mes-scroll-x",
     style: {
-      maxHeight: 320,
+      maxHeight: 420,
       overflowY: "auto",
       marginTop: 12
     }
@@ -5015,7 +5035,7 @@ function QuickEntryForm({
       })) onDeleteEntry(e.id);
     },
     title: "Xóa"
-  })))))))), editingEntry && /*#__PURE__*/React.createElement(ProductionEntryEditModal, {
+  }))))))), editingEntry && /*#__PURE__*/React.createElement(ProductionEntryEditModal, {
     entry: editingEntry,
     onClose: () => setEditingEntry(null),
     onSave: onEditEntry
@@ -5134,6 +5154,7 @@ function DashboardPage({
   onDeleteKeoTrung,
   onUpdateScrap
 }) {
+  const [selectedStageKey, setSelectedStageKey] = useState(null);
   const stageTotals = useMemo(() => {
     const t = {};
     STAGES.forEach(s => {
@@ -5209,10 +5230,8 @@ function DashboardPage({
   }, /*#__PURE__*/React.createElement(QuickEntryForm, {
     currentUser: currentUser,
     orders: orders,
-    auditLog: auditLog,
     onSubmit: onQuickEntry,
-    onEditEntry: isAdmin ? onEditKeoTrung : undefined,
-    onDeleteEntry: isAdmin ? onDeleteKeoTrung : undefined
+    onStageChange: setSelectedStageKey
   }), /*#__PURE__*/React.createElement(ActivityFeed, {
     auditLog: auditLog,
     scrap: scrap,
@@ -5221,7 +5240,12 @@ function DashboardPage({
     isAdmin: isAdmin,
     onUpdateScrap: onUpdateScrap,
     onEditProductionEntry: onEditKeoTrung
-  })), (currentUser.role === "admin" || currentUser.team === "KÉO") && /*#__PURE__*/React.createElement("div", {
+  })), selectedStageKey && /*#__PURE__*/React.createElement(StageHistorySection, {
+    stageKey: selectedStageKey,
+    auditLog: auditLog,
+    onEditEntry: isAdmin ? onEditKeoTrung : undefined,
+    onDeleteEntry: isAdmin ? onDeleteKeoTrung : undefined
+  }), (currentUser.role === "admin" || currentUser.team === "KÉO") && /*#__PURE__*/React.createElement("div", {
     style: {
       borderTop: `2px solid ${COLORS.border}`,
       paddingTop: 20
@@ -9326,19 +9350,25 @@ function ReportsPage({
   scrap,
   timeseries,
   auditLog,
+  currentUser,
+  isAdmin,
   onEditProductionEntry,
   onDeleteProductionEntry
 }) {
+  // Admin xem tất cả công đoạn; tài khoản theo tổ chỉ xem đúng công đoạn của tổ mình
+  const visibleStageKeys = isAdmin ? null : TEAM_REPORT_STAGES[currentUser?.team] || null;
+  const visibleStages = visibleStageKeys ? STAGES.filter(s => visibleStageKeys.includes(s.key)) : STAGES;
+  const isStageVisible = key => !visibleStageKeys || visibleStageKeys.includes(key);
   const [customerFilter, setCustomerFilter] = useState("all");
   const [keoTrungGranularity, setKeoTrungGranularity] = useState("day");
   const liveStageData = useMemo(() => {
     const keoTrungTotal = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
-    return STAGES.map(s => ({
+    return visibleStages.map(s => ({
       name: s.short,
       fullName: s.label,
       value: s.key === "keo_trung" ? keoTrungTotal : orders.reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0)
     }));
-  }, [orders, auditLog]);
+  }, [orders, auditLog, visibleStages]);
   const historicalData = useMemo(() => timeseries.map((t, i) => ({
     ky: "Kỳ " + (i + 1),
     "Kéo trung": t.keo_trung,
@@ -9362,6 +9392,7 @@ function ReportsPage({
       value
     })).filter(d => d.value > 0);
   }, [orders]);
+  const MACHINE_TYPE_STAGE = useMemo(() => Object.fromEntries(MACHINE_TYPES.map(t => [t.key, t.stage])), []);
   const machineDist = useMemo(() => {
     const m = {
       running: 0,
@@ -9369,23 +9400,26 @@ function ReportsPage({
       maintenance: 0,
       broken: 0
     };
-    machines.forEach(mm => m[mm.status]++);
+    machines.filter(mm => {
+      const st = MACHINE_TYPE_STAGE[mm.typeKey];
+      return !st || isStageVisible(st);
+    }).forEach(mm => m[mm.status]++);
     return Object.entries(m).map(([k, v]) => ({
       name: MACHINE_STATUS[k].label,
       value: v,
       color: MACHINE_STATUS[k].color
     })).filter(d => d.value > 0);
-  }, [machines]);
+  }, [machines, visibleStageKeys]);
   const scrapByDate = useMemo(() => {
     const m = {};
-    scrap.forEach(s => {
+    scrap.filter(s => isStageVisible(s.stage)).forEach(s => {
       m[s.date] = (m[s.date] || 0) + (s.qty || 0);
     });
     return Object.entries(m).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, qty]) => ({
       date: fmtDate(date),
       qty
     }));
-  }, [scrap]);
+  }, [scrap, visibleStageKeys]);
   const customers = useMemo(() => [...new Set(orders.map(o => o.customer).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [orders]);
   const byCustomerData = useMemo(() => {
     const m = {};
@@ -9893,31 +9927,31 @@ function ReportsPage({
     wrapperStyle: {
       fontSize: 11.5
     }
-  }), /*#__PURE__*/React.createElement(Line, {
+  }), isStageVisible("keo_tinh") && /*#__PURE__*/React.createElement(Line, {
     type: "monotone",
     dataKey: "Kéo tinh",
     stroke: COLORS.copper,
     dot: false,
     strokeWidth: 2
-  }), /*#__PURE__*/React.createElement(Line, {
+  }), isStageVisible("u_nhiet") && /*#__PURE__*/React.createElement(Line, {
     type: "monotone",
     dataKey: "Ủ nhiệt",
     stroke: COLORS.blue,
     dot: false,
     strokeWidth: 2
-  }), /*#__PURE__*/React.createElement(Line, {
+  }), isStageVisible("ben") && /*#__PURE__*/React.createElement(Line, {
     type: "monotone",
     dataKey: "Bện",
     stroke: COLORS.green,
     dot: false,
     strokeWidth: 2
-  }), /*#__PURE__*/React.createElement(Line, {
+  }), isStageVisible("keo_trung") && /*#__PURE__*/React.createElement(Line, {
     type: "monotone",
     dataKey: "Kéo trung",
     stroke: COLORS.amber,
     dot: false,
     strokeWidth: 2
-  }), /*#__PURE__*/React.createElement(Line, {
+  }), isStageVisible("ma_thiec") && /*#__PURE__*/React.createElement(Line, {
     type: "monotone",
     dataKey: "Mạ thiếc",
     stroke: COLORS.violet,
@@ -10002,7 +10036,7 @@ function ReportsPage({
     }
   })))), (() => {
     const keoTrungTotalForStageData = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
-    const stageData = STAGES.map(s => {
+    const stageData = visibleStages.map(s => {
       const production = s.key === "keo_trung" ? keoTrungTotalForStageData : orders.reduce((a, o) => a + (o.stages?.[s.key]?.done || 0), 0);
       const scrapForStage = scrap.filter(sc => sc.stage === s.key);
       const scrapQty = scrapForStage.reduce((a, sc) => a + (sc.qty || 0), 0);
@@ -12686,6 +12720,8 @@ function AppInner() {
     scrap: data.scrap,
     timeseries: SEED_TIMESERIES,
     auditLog: data.auditLog,
+    currentUser: currentUser,
+    isAdmin: isAdmin,
     onEditProductionEntry: handleEditProductionEntry,
     onDeleteProductionEntry: handleDeleteProductionEntry
   }), activeTab === "admin" && isAdmin && /*#__PURE__*/React.createElement(AdminPage, {
