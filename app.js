@@ -4635,9 +4635,11 @@ function StatCard({
   }, sub));
 }
 function ProductionPipeline({
-  stageTotals
+  stageTotals,
+  visibleStages
 }) {
-  const max = Math.max(1, ...STAGES.map(s => stageTotals[s.key] || 0));
+  const pipelineStages = visibleStages || STAGES;
+  const max = Math.max(1, ...pipelineStages.map(s => stageTotals[s.key] || 0));
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
@@ -4677,7 +4679,7 @@ function ProductionPipeline({
       gap: 0,
       paddingBottom: 6
     }
-  }, STAGES.map((s, i) => {
+  }, pipelineStages.map((s, i) => {
     const total = stageTotals[s.key] || 0;
     const h = 8 + total / max * 46;
     return /*#__PURE__*/React.createElement(React.Fragment, {
@@ -4748,7 +4750,7 @@ function ProductionPipeline({
         whiteSpace: "nowrap",
         fontWeight: 600
       }
-    }, s.label)), i < STAGES.length - 1 && /*#__PURE__*/React.createElement("svg", {
+    }, s.label)), i < pipelineStages.length - 1 && /*#__PURE__*/React.createElement("svg", {
       width: "34",
       height: "56",
       style: {
@@ -4947,7 +4949,6 @@ function StageHistorySection({
   const [showEntries, setShowEntries] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const entries = useMemo(() => (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === stageKey && a.date && typeof a.qty === "number").sort((a, b) => new Date(b.date) - new Date(a.date)), [auditLog, stageKey]);
-  if (!onEditEntry && !onDeleteEntry) return null;
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
@@ -5047,13 +5048,25 @@ function ActivityFeed({
   orders,
   currentUser,
   isAdmin,
+  visibleStageKeys,
   onUpdateScrap,
   onEditProductionEntry
 }) {
   const [editingScrap, setEditingScrap] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
+  const isStageVisible = key => !visibleStageKeys || visibleStageKeys.includes(key);
   // Kéo trung có mục "Lịch sử nhập Kéo trung" riêng ở dưới — không lặp lại ở đây
-  const relevant = auditLog.filter(a => (a.type === "production_entry" && a.stageKey !== "keo_trung") || a.type === "scrap_add").slice(0, 8);
+  const relevant = auditLog.filter(a => {
+    if (a.type === "production_entry") {
+      return a.stageKey !== "keo_trung" && isStageVisible(a.stageKey);
+    }
+    if (a.type === "scrap_add") {
+      const rec = scrap.find(s => s.id === a.targetId);
+      const stageKey = rec ? rec.stage : a.stage;
+      return isStageVisible(stageKey);
+    }
+    return false;
+  }).slice(0, 8);
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
@@ -5155,6 +5168,10 @@ function DashboardPage({
   onUpdateScrap
 }) {
   const [selectedStageKey, setSelectedStageKey] = useState(null);
+  // Admin xem tất cả công đoạn; tài khoản theo tổ chỉ xem đúng công đoạn của tổ mình
+  const visibleStageKeys = isAdmin ? null : TEAM_REPORT_STAGES[currentUser?.team] || null;
+  const visibleDashboardStages = visibleStageKeys ? STAGES.filter(s => visibleStageKeys.includes(s.key)) : STAGES;
+  const isStageVisibleDash = key => !visibleStageKeys || visibleStageKeys.includes(key);
   const stageTotals = useMemo(() => {
     const t = {};
     STAGES.forEach(s => {
@@ -5179,6 +5196,7 @@ function DashboardPage({
   }, [machines]);
   const openOrders = orders.filter(o => orderProgress(o).statusLabel !== "Hoàn thành").length;
   const last7Scrap = scrap.filter(s => {
+    if (!isStageVisibleDash(s.stage)) return false;
     const d = new Date(s.date);
     const now = new Date();
     return (now - d) / (1000 * 3600 * 24) <= 7;
@@ -5220,7 +5238,8 @@ function DashboardPage({
     sub: `${scrap.length} lượt ghi nhận`,
     accent: "#EA580C"
   })), /*#__PURE__*/React.createElement(ProductionPipeline, {
-    stageTotals: stageTotals
+    stageTotals: stageTotals,
+    visibleStages: visibleDashboardStages
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
@@ -5238,6 +5257,7 @@ function DashboardPage({
     orders: orders,
     currentUser: currentUser,
     isAdmin: isAdmin,
+    visibleStageKeys: visibleStageKeys,
     onUpdateScrap: onUpdateScrap,
     onEditProductionEntry: onEditKeoTrung
   })), selectedStageKey && /*#__PURE__*/React.createElement(StageHistorySection, {
@@ -12227,7 +12247,8 @@ function AppInner() {
       customer: order.customer,
       spec: order.spec,
       date: new Date().toISOString().slice(0, 10),
-      wireType
+      wireType,
+      note
     });
   }
   async function handleEditProductionEntry(entryId, newQty, newMaterialCode, newWireType, newDate) {
