@@ -6513,8 +6513,9 @@ function DowntimeAddForm({
   }, "Ghi nhận thời gian dừng máy"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-      gap: 14
+      gridTemplateColumns: "1fr 1fr",
+      gap: 14,
+      marginBottom: 16
     }
   }, /*#__PURE__*/React.createElement(Field, {
     label: "Máy"
@@ -6534,35 +6535,91 @@ function DowntimeAddForm({
   }, Object.entries(MACHINE_STATUS).filter(([k]) => k !== "running").map(([k, v]) => /*#__PURE__*/React.createElement("option", {
     key: k,
     value: k
-  }, v.label)))), /*#__PURE__*/React.createElement(Field, {
-    label: "BẮT ĐẦU — Ngày"
+  }, v.label))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 14,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14,
+      borderRadius: 10,
+      background: `${COLORS.red}0d`,
+      border: `1.5px solid ${COLORS.red}40`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 800,
+      color: COLORS.red,
+      letterSpacing: ".04em",
+      marginBottom: 10
+    }
+  }, "⏱ BẮT ĐẦU"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Ngày"
   }, /*#__PURE__*/React.createElement("input", {
     type: "date",
     className: "mes-input",
     value: startDate,
     onChange: e => setStartDate(e.target.value)
   })), /*#__PURE__*/React.createElement(Field, {
-    label: "BẮT ĐẦU — Giờ"
+    label: "Giờ"
   }, /*#__PURE__*/React.createElement("input", {
     type: "time",
     className: "mes-input",
     value: startTime,
     onChange: e => setStartTime(e.target.value)
-  })), /*#__PURE__*/React.createElement(Field, {
-    label: "KẾT THÚC — Ngày (để trống nếu vẫn đang dừng)"
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14,
+      borderRadius: 10,
+      background: `${COLORS.green}0d`,
+      border: `1.5px solid ${COLORS.green}40`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      fontWeight: 800,
+      color: COLORS.green,
+      letterSpacing: ".04em",
+      marginBottom: 10
+    }
+  }, "✓ KẾT THÚC ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 500,
+      color: COLORS.textFaint,
+      letterSpacing: 0,
+      textTransform: "none"
+    }
+  }, "(để trống nếu vẫn đang dừng)")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Ngày"
   }, /*#__PURE__*/React.createElement("input", {
     type: "date",
     className: "mes-input",
     value: endDate,
     onChange: e => setEndDate(e.target.value)
   })), /*#__PURE__*/React.createElement(Field, {
-    label: "KẾT THÚC — Giờ"
+    label: "Giờ"
   }, /*#__PURE__*/React.createElement("input", {
     type: "time",
     className: "mes-input",
     value: endTime,
     onChange: e => setEndTime(e.target.value)
-  }))), /*#__PURE__*/React.createElement(Field, {
+  }))))), /*#__PURE__*/React.createElement(Field, {
     label: "Nguyên nhân"
   }, /*#__PURE__*/React.createElement("textarea", {
     className: "mes-input",
