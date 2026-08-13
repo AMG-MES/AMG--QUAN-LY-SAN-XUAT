@@ -3513,6 +3513,14 @@ function fmtDateTime(iso) {
     year: "numeric"
   });
 }
+function fmtTime(ts) {
+  const d = _toJsDate(ts);
+  if (!d) return null;
+  return d.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
 function uid(prefix) {
   return prefix + "-" + Math.random().toString(36).slice(2, 9);
 }
@@ -5017,7 +5025,13 @@ function StageHistorySection({
     style: {
       color: COLORS.textFaint
     }
-  }, e.note || "—"), /*#__PURE__*/React.createElement("td", {
+  }, e.note || "—", fmtTime(e.ts) && /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 10.5,
+      color: COLORS.textFaint
+    }
+  }, fmtTime(e.ts))), /*#__PURE__*/React.createElement("td", {
     style: {
       display: "flex",
       gap: 4
@@ -6186,6 +6200,15 @@ function OrdersPage({
 }
 
 /* ===================== MACHINES PAGE ===================== */
+function fmtDuration(ms) {
+  if (!ms || ms < 0) return "0 phút";
+  const totalMin = Math.round(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m} phút`;
+  if (m === 0) return `${h} giờ`;
+  return `${h} giờ ${m} phút`;
+}
 function MachineStatusModal({
   machine,
   isAdmin,
@@ -6199,6 +6222,57 @@ function MachineStatusModal({
   } = useDialog();
   const [status, setStatus] = useState(machine.status);
   const [note, setNote] = useState(machine.note || "");
+  const [showLog, setShowLog] = useState(false);
+  const downtimeLog = useMemo(() => [...(machine.downtimeLog || [])].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)), [machine.downtimeLog]);
+  const stats = useMemo(() => {
+    const now = Date.now();
+    let totalDowntimeMs = 0;
+    let byStatus = {};
+    downtimeLog.forEach(ev => {
+      const start = new Date(ev.startTime).getTime();
+      const end = ev.endTime ? new Date(ev.endTime).getTime() : now;
+      const dur = Math.max(0, end - start);
+      totalDowntimeMs += dur;
+      byStatus[ev.status] = (byStatus[ev.status] || 0) + dur;
+    });
+    return {
+      totalDowntimeMs,
+      byStatus,
+      count: downtimeLog.length
+    };
+  }, [downtimeLog]);
+  function handleExportMachineExcel() {
+    if (!window.XLSX) {
+      alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      return;
+    }
+    const now = Date.now();
+    const rows = downtimeLog.map(ev => ({
+      "Trạng thái": ev.statusLabel || MACHINE_STATUS[ev.status]?.label || ev.status,
+      "Bắt đầu": fmtDateTime(ev.startTime),
+      "Kết thúc": ev.endTime ? fmtDateTime(ev.endTime) : "Đang diễn ra",
+      "Thời lượng": fmtDuration((ev.endTime ? new Date(ev.endTime).getTime() : now) - new Date(ev.startTime).getTime()),
+      "Nguyên nhân": ev.reason || "",
+      "Người ghi": ev.recordedBy || ""
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{
+      wch: 14
+    }, {
+      wch: 18
+    }, {
+      wch: 18
+    }, {
+      wch: 16
+    }, {
+      wch: 40
+    }, {
+      wch: 16
+    }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Lich su dung may");
+    XLSX.writeFile(wb, `lich_su_dung_may_${machine.id}.xlsx`);
+  }
   async function handleDelete() {
     if (await askConfirm(`Xóa máy ${machine.id} (${machine.typeLabel})? Hành động không thể hoàn tác.`, {
       danger: true,
@@ -6240,6 +6314,104 @@ function MachineStatusModal({
     onChange: e => setNote(e.target.value),
     placeholder: "Mô tả tình trạng máy, linh kiện cần thay..."
   })), /*#__PURE__*/React.createElement("div", {
+    className: "mes-card",
+    style: {
+      padding: 12,
+      marginBottom: 14,
+      border: `1.5px solid ${COLORS.red}55`,
+      borderTop: `3px solid ${COLORS.red}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12
+    }
+  }, /*#__PURE__*/React.createElement("b", null, "Tổng thời gian dừng máy: "), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: COLORS.red,
+      fontWeight: 700
+    }
+  }, fmtDuration(stats.totalDowntimeMs)), " · ", stats.count, " lượt"), /*#__PURE__*/React.createElement("button", {
+    onClick: handleExportMachineExcel,
+    className: "mes-btn",
+    style: {
+      fontSize: 11.5,
+      padding: "5px 8px"
+    }
+  }, /*#__PURE__*/React.createElement(Download, {
+    size: 12
+  }), " Xuất Excel")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowLog(o => !o),
+    style: {
+      background: "none",
+      border: "none",
+      color: COLORS.blue,
+      fontSize: 11.5,
+      cursor: "pointer",
+      padding: 0,
+      display: "flex",
+      alignItems: "center",
+      gap: 4
+    }
+  }, showLog ? /*#__PURE__*/React.createElement(ChevronUp, {
+    size: 12
+  }) : /*#__PURE__*/React.createElement(ChevronDown, {
+    size: 12
+  }), showLog ? "Ẩn lịch sử" : "Xem lịch sử chi tiết"), showLog && /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxHeight: 200,
+      overflowY: "auto",
+      marginTop: 8
+    }
+  }, downtimeLog.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: COLORS.textFaint,
+      fontStyle: "italic",
+      padding: "8px 0"
+    }
+  }, "Chưa có lượt đổi trạng thái nào được ghi nhận kể từ khi bật tính năng này. Lần tới khi bạn đổi trạng thái máy (ví dụ chuyển từ Đang chạy sang trạng thái khác), lượt đó sẽ tự động hiện ở đây.") : downtimeLog.map(ev => /*#__PURE__*/React.createElement("div", {
+    key: ev.id,
+    style: {
+      padding: "6px 0",
+      borderTop: `1px solid ${COLORS.border}`,
+      fontSize: 11.5
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      color: MACHINE_STATUS[ev.status]?.color
+    }
+  }, ev.statusLabel || MACHINE_STATUS[ev.status]?.label), /*#__PURE__*/React.createElement("span", {
+    className: "mes-mono",
+    style: {
+      color: COLORS.textFaint
+    }
+  }, fmtDuration((ev.endTime ? new Date(ev.endTime).getTime() : Date.now()) - new Date(ev.startTime).getTime()))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: COLORS.textFaint
+    }
+  }, fmtDateTime(ev.startTime), " → ", ev.endTime ? fmtDateTime(ev.endTime) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: COLORS.red,
+      fontWeight: 700
+    }
+  }, "Đang diễn ra")), ev.reason && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: COLORS.textDim,
+      marginTop: 2
+    }
+  }, ev.reason))))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11.5,
       color: COLORS.textFaint,
@@ -6444,11 +6616,71 @@ function MachinesPage({
     type,
     machines: filteredMachines.filter(m => m.typeKey === type.key)
   })).filter(g => g.machines.length > 0);
+  function handleExportAllMachines() {
+    if (!window.XLSX) {
+      alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
+      return;
+    }
+    const now = Date.now();
+    const rows = machines.map(m => {
+      const log = m.downtimeLog || [];
+      let totalMs = 0,
+        maintMs = 0,
+        idleMs = 0,
+        brokenMs = 0;
+      log.forEach(ev => {
+        const dur = Math.max(0, (ev.endTime ? new Date(ev.endTime).getTime() : now) - new Date(ev.startTime).getTime());
+        totalMs += dur;
+        if (ev.status === "maintenance") maintMs += dur;
+        if (ev.status === "idle") idleMs += dur;
+        if (ev.status === "broken") brokenMs += dur;
+      });
+      return {
+        "Mã máy": m.id,
+        "Loại máy": m.typeLabel,
+        "Trạng thái hiện tại": MACHINE_STATUS[m.status]?.label || m.status,
+        "Số lượt dừng": log.length,
+        "Tổng thời gian dừng": fmtDuration(totalMs),
+        "Thời gian tạm nghỉ": fmtDuration(idleMs),
+        "Thời gian bảo trì": fmtDuration(maintMs),
+        "Thời gian hỏng/dừng": fmtDuration(brokenMs),
+        "Ghi chú gần nhất": m.note || ""
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{
+      wch: 10
+    }, {
+      wch: 16
+    }, {
+      wch: 16
+    }, {
+      wch: 12
+    }, {
+      wch: 18
+    }, {
+      wch: 16
+    }, {
+      wch: 16
+    }, {
+      wch: 16
+    }, {
+      wch: 30
+    }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Thoi gian dung may");
+    XLSX.writeFile(wb, `thoi_gian_dung_may_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: `${total} máy móc thiết bị`,
     title: "Giám sát hệ thống máy móc thiết bị hoạt động",
     icon: Cog,
-    iconColor: COLORS.blue
+    iconColor: COLORS.blue,
+    action: /*#__PURE__*/React.createElement(Button, {
+      onClick: handleExportAllMachines
+    }, /*#__PURE__*/React.createElement(Download, {
+      size: 14
+    }), " Xuất Excel thời gian dừng máy")
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -10852,7 +11084,13 @@ function KeoTrungPage({
     style: {
       color: COLORS.textFaint
     }
-  }, e.note || "—"), /*#__PURE__*/React.createElement("td", {
+  }, e.note || "—", fmtTime(e.ts) && /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 10.5,
+      color: COLORS.textFaint
+    }
+  }, fmtTime(e.ts))), /*#__PURE__*/React.createElement("td", {
     style: {
       display: "flex",
       gap: 4
@@ -12433,9 +12671,36 @@ function AppInner() {
     audit("order_delete", `Xóa ${ids.length} đơn hàng cùng lúc: ${preview}${removed.length > 5 ? "…" : ""}`);
   }
   function handleUpdateMachine(id, status, note) {
+    const machine = data.machines.find(m => m.id === id);
+    const prevStatus = machine?.status;
+    const nowIso = new Date().toISOString();
+    let downtimeLog = Array.isArray(machine?.downtimeLog) ? [...machine.downtimeLog] : [];
+    if (prevStatus !== status) {
+      // Đóng sự kiện đang mở (nếu máy trước đó không chạy)
+      if (prevStatus && prevStatus !== "running") {
+        const openIdx = downtimeLog.findIndex(ev => !ev.endTime);
+        if (openIdx !== -1) downtimeLog[openIdx] = {
+          ...downtimeLog[openIdx],
+          endTime: nowIso
+        };
+      }
+      // Mở sự kiện mới (nếu trạng thái mới không phải đang chạy)
+      if (status !== "running") {
+        downtimeLog.push({
+          id: uid("DT"),
+          status,
+          statusLabel: MACHINE_STATUS[status]?.label || status,
+          startTime: nowIso,
+          endTime: null,
+          reason: note || "",
+          recordedBy: currentUser.fullName
+        });
+      }
+    }
     db.collection(FS.machines).doc(id).update({
       status,
       note,
+      downtimeLog,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentUser.fullName
     }).catch(() => {});

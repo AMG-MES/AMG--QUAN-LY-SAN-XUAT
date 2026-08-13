@@ -1,4 +1,4 @@
-const V='mes-v37-audit-id-mismatch-fix', CDN=[
+const V='mes-v40-downtime-always-visible', CDN=[
   'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js',
   'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js',
   'https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js',
