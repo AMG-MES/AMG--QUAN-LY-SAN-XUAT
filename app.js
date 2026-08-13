@@ -7099,71 +7099,11 @@ function MachinesPage({
     type,
     machines: filteredMachines.filter(m => m.typeKey === type.key)
   })).filter(g => g.machines.length > 0);
-  function handleExportAllMachines() {
-    if (!window.XLSX) {
-      alert("Không tải được thư viện xuất Excel. Vui lòng kiểm tra kết nối mạng và thử lại.");
-      return;
-    }
-    const now = Date.now();
-    const rows = machines.map(m => {
-      const log = m.downtimeLog || [];
-      let totalMs = 0,
-        maintMs = 0,
-        idleMs = 0,
-        brokenMs = 0;
-      log.forEach(ev => {
-        const dur = Math.max(0, (ev.endTime ? new Date(ev.endTime).getTime() : now) - new Date(ev.startTime).getTime());
-        totalMs += dur;
-        if (ev.status === "maintenance") maintMs += dur;
-        if (ev.status === "idle") idleMs += dur;
-        if (ev.status === "broken") brokenMs += dur;
-      });
-      return {
-        "Mã máy": m.id,
-        "Loại máy": m.typeLabel,
-        "Trạng thái hiện tại": MACHINE_STATUS[m.status]?.label || m.status,
-        "Số lượt dừng": log.length,
-        "Tổng thời gian dừng": fmtDuration(totalMs),
-        "Thời gian tạm nghỉ": fmtDuration(idleMs),
-        "Thời gian bảo trì": fmtDuration(maintMs),
-        "Thời gian hỏng/dừng": fmtDuration(brokenMs),
-        "Ghi chú gần nhất": m.note || ""
-      };
-    });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{
-      wch: 10
-    }, {
-      wch: 16
-    }, {
-      wch: 16
-    }, {
-      wch: 12
-    }, {
-      wch: 18
-    }, {
-      wch: 16
-    }, {
-      wch: 16
-    }, {
-      wch: 16
-    }, {
-      wch: 30
-    }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Thoi gian dung may");
-    XLSX.writeFile(wb, `thoi_gian_dung_may_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  }
   return /*#__PURE__*/React.createElement("div", { style: { zoom: 1.5 } }, /*#__PURE__*/React.createElement(SectionHeading, {
     eyebrow: `${total} máy móc thiết bị`,
     title: "Giám sát hệ thống máy móc thiết bị hoạt động",
     icon: Cog,
-    iconColor: COLORS.blue,
-    action: /*#__PURE__*/React.createElement(Button, {
-      onClick: handleExportAllMachines
-    }, /*#__PURE__*/React.createElement(Download, {
-      size: 14
-    }), " Xuất Excel thời gian dừng máy")
+    iconColor: COLORS.blue
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
