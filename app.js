@@ -6783,7 +6783,7 @@ function DowntimeTrackingPage({
     title: "Theo dõi thời gian dừng máy",
     icon: History,
     iconColor: COLORS.red
-  }), isAdmin && /*#__PURE__*/React.createElement(DowntimeAddForm, {
+  }), (isAdmin || currentUser?.role === "employee") && /*#__PURE__*/React.createElement(DowntimeAddForm, {
     machines: machines,
     onAdd: onAdd
   }), /*#__PURE__*/React.createElement("div", {
