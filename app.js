@@ -1011,6 +1011,26 @@ const Factory = _svg(() => [/*#__PURE__*/React.createElement("path", {
   }), /*#__PURE__*/React.createElement("path", {
     key: 2,
     d: "M8.2 13.2 6.5 21l5.5-3 5.5 3-1.7-7.8"
+  })]),
+  TvIcon = _svg(() => [/*#__PURE__*/React.createElement("rect", {
+    key: 1,
+    x: 2,
+    y: 4,
+    width: 20,
+    height: 14,
+    rx: 2
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 2,
+    x1: 8,
+    y1: 22,
+    x2: 16,
+    y2: 22
+  }), /*#__PURE__*/React.createElement("line", {
+    key: 3,
+    x1: 12,
+    y1: 18,
+    x2: 12,
+    y2: 22
   })]);
 /* ===================== DESIGN TOKENS ===================== */
 const COLORS = {
@@ -1333,6 +1353,11 @@ const NAV_ITEMS = [{
   key: "downtime",
   label: "Theo dõi thời gian dừng máy",
   icon: History,
+  roles: ["admin", "employee"]
+}, {
+  key: "tvmode",
+  label: "Chế độ TV xưởng",
+  icon: TvIcon,
   roles: ["admin", "employee"]
 }, {
   key: "qc",
@@ -6923,6 +6948,466 @@ function DowntimeEditModal({
   }, /*#__PURE__*/React.createElement(Save, {
     size: 14
   }), " Lưu thay đổi"));
+}
+/* ===================== CHẾ ĐỘ TV XƯỞNG ===================== */
+function TVModePage({
+  machines,
+  orders,
+  scrap,
+  tvRotationOn,
+  onToggleRotation
+}) {
+  const [now, setNow] = useState(() => new Date());
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }
+  const machineCounts = useMemo(() => {
+    const c = {
+      running: 0,
+      idle: 0,
+      maintenance: 0,
+      broken: 0
+    };
+    machines.forEach(m => c[m.status]++);
+    return c;
+  }, [machines]);
+  const totalMachines = machines.length;
+  const stoppedMachines = totalMachines - machineCounts.running;
+  const activeOrders = useMemo(() => orders.map(o => ({
+    order: o,
+    prog: orderProgress(o)
+  })).filter(x => x.prog.statusLabel === "Đang sản xuất").sort((a, b) => (b.prog.pct || 0) - (a.prog.pct || 0)).slice(0, 8), [orders]);
+  const scrapByStagePie = useMemo(() => {
+    const m = {};
+    scrap.forEach(s => {
+      m[s.stage] = (m[s.stage] || 0) + (s.qty || 0);
+    });
+    return Object.entries(m).filter(([, v]) => v > 0).map(([key, value]) => ({
+      name: STAGE_MAP[key]?.label || key,
+      value,
+      color: STAGE_MAP[key]?.color || COLORS.textFaint
+    }));
+  }, [scrap]);
+  const totalScrapQty = scrapByStagePie.reduce((a, d) => a + d.value, 0);
+  const totalProductionAll = useMemo(() => STAGES.reduce((a, s) => a + orders.reduce((aa, o) => aa + (o.stages?.[s.key]?.done || 0), 0), 0), [orders]);
+  const scrapPct = totalProductionAll + totalScrapQty > 0 ? totalScrapQty / (totalProductionAll + totalScrapQty) * 100 : 0;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 4000,
+      background: "linear-gradient(160deg, #0A1628, #0F2340)",
+      color: "#fff",
+      overflowY: "auto",
+      padding: "28px 36px",
+      fontFamily: FONT_BODY
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 26
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 16
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: LOGO_DATA_URI,
+    alt: "Logo",
+    style: {
+      width: 54,
+      height: 54,
+      borderRadius: 12,
+      background: "#fff",
+      objectFit: "contain"
+    }
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "mes-display",
+    style: {
+      fontSize: 26,
+      fontWeight: 800
+    }
+  }, "AOMAGA VIỆT NAM · MES"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: "rgba(255,255,255,.6)"
+    }
+  }, "Bảng điều khiển xưởng sản xuất — thời gian thực"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 34,
+      fontWeight: 800,
+      lineHeight: 1
+    }
+  }, now.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "rgba(255,255,255,.6)"
+    }
+  }, now.toLocaleDateString("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: toggleFullscreen,
+    title: isFullscreen ? "Thoát toàn màn hình" : "Toàn màn hình",
+    style: {
+      background: "rgba(255,255,255,.1)",
+      border: "1px solid rgba(255,255,255,.25)",
+      borderRadius: 8,
+      color: "#fff",
+      padding: "8px 12px",
+      cursor: "pointer",
+      fontSize: 12.5
+    }
+  }, isFullscreen ? "⤡ Thoát toàn màn hình" : "⤢ Toàn màn hình"), onToggleRotation && /*#__PURE__*/React.createElement("button", {
+    onClick: () => onToggleRotation(!tvRotationOn),
+    title: tvRotationOn ? "Tạm dừng trình chiếu tự động" : "Bắt đầu trình chiếu tự động (10 phút trang này, 5 phút mỗi trang khác)",
+    style: {
+      background: tvRotationOn ? "rgba(74,222,128,.2)" : "rgba(255,255,255,.1)",
+      border: `1px solid ${tvRotationOn ? "rgba(74,222,128,.5)" : "rgba(255,255,255,.25)"}`,
+      borderRadius: 8,
+      color: tvRotationOn ? "#4ADE80" : "#fff",
+      padding: "8px 12px",
+      cursor: "pointer",
+      fontSize: 12.5,
+      fontWeight: 700
+    }
+  }, tvRotationOn ? "⏸ Đang trình chiếu — Tạm dừng" : "▶ Bắt đầu trình chiếu tự động"))),
+  /* 3 khối chính */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1.3fr 1fr",
+      gap: 22
+    }
+  },
+  /* Khối 1: Máy móc */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(255,255,255,.06)",
+      border: "1px solid rgba(255,255,255,.12)",
+      borderRadius: 18,
+      padding: 22
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.7)",
+      marginBottom: 18,
+      textTransform: "uppercase"
+    }
+  }, "⚙ Máy móc thiết bị"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 14,
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(34,197,94,.15)",
+      border: "1.5px solid rgba(34,197,94,.5)",
+      borderRadius: 14,
+      padding: "16px 12px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 44,
+      fontWeight: 800,
+      color: "#4ADE80",
+      lineHeight: 1
+    }
+  }, machineCounts.running), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      marginTop: 6,
+      color: "rgba(255,255,255,.75)"
+    }
+  }, "ĐANG CHẠY")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(239,68,68,.15)",
+      border: "1.5px solid rgba(239,68,68,.5)",
+      borderRadius: 14,
+      padding: "16px 12px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 44,
+      fontWeight: 800,
+      color: "#F87171",
+      lineHeight: 1
+    }
+  }, stoppedMachines), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      marginTop: 6,
+      color: "rgba(255,255,255,.75)"
+    }
+  }, "ĐANG DỪNG"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 10,
+      borderRadius: 999,
+      background: "rgba(255,255,255,.1)",
+      overflow: "hidden",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${totalMachines > 0 ? machineCounts.running / totalMachines * 100 : 0}%`,
+      background: "linear-gradient(90deg, #22C55E, #4ADE80)"
+    }
+  })), [{
+    label: "Tạm nghỉ",
+    val: machineCounts.idle,
+    color: "#FBBF24"
+  }, {
+    label: "Bảo trì",
+    val: machineCounts.maintenance,
+    color: "#60A5FA"
+  }, {
+    label: "Hỏng/Dừng",
+    val: machineCounts.broken,
+    color: "#F87171"
+  }].map(row => /*#__PURE__*/React.createElement("div", {
+    key: row.label,
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "7px 0",
+      borderTop: "1px solid rgba(255,255,255,.1)",
+      fontSize: 14
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      color: "rgba(255,255,255,.85)"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 9,
+      height: 9,
+      borderRadius: 999,
+      background: row.color
+    }
+  }), row.label), /*#__PURE__*/React.createElement("span", {
+    className: "mes-mono",
+    style: {
+      fontWeight: 800,
+      color: row.color
+    }
+  }, row.val)))),
+  /* Khối 2: Tiến độ đơn hàng */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(255,255,255,.06)",
+      border: "1px solid rgba(255,255,255,.12)",
+      borderRadius: 18,
+      padding: 22
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.7)",
+      marginBottom: 18,
+      textTransform: "uppercase"
+    }
+  }, "📦 Tiến độ đơn hàng đang sản xuất (", activeOrders.length, ")"), activeOrders.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "rgba(255,255,255,.5)",
+      fontSize: 14,
+      padding: "20px 0"
+    }
+  }, "Không có đơn hàng nào đang sản xuất.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 14
+    }
+  }, activeOrders.map(({
+    order,
+    prog
+  }) => /*#__PURE__*/React.createElement("div", {
+    key: order.id
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 14,
+      marginBottom: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      maxWidth: "70%"
+    }
+  }, order.customer, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "rgba(255,255,255,.5)",
+      fontWeight: 400
+    }
+  }, " · ", order.spec)), /*#__PURE__*/React.createElement("span", {
+    className: "mes-mono",
+    style: {
+      fontWeight: 800,
+      color: "#FBBF24"
+    }
+  }, Math.round(prog.pct || 0), "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 9,
+      borderRadius: 999,
+      background: "rgba(255,255,255,.1)",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${clamp(prog.pct || 0, 0, 100)}%`,
+      background: "linear-gradient(90deg, #F59E0B, #FBBF24)"
+    }
+  }))))),
+  /* Khối 3: Tỷ lệ phế liệu */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(255,255,255,.06)",
+      border: "1px solid rgba(255,255,255,.12)",
+      borderRadius: 18,
+      padding: 22,
+      display: "flex",
+      flexDirection: "column"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.7)",
+      marginBottom: 6,
+      textTransform: "uppercase"
+    }
+  }, "♻ Tỷ lệ phế liệu"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mes-mono",
+    style: {
+      fontSize: 40,
+      fontWeight: 800,
+      color: scrapPct > 5 ? "#F87171" : scrapPct > 2 ? "#FBBF24" : "#4ADE80"
+    }
+  }, scrapPct.toFixed(2), "%"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "rgba(255,255,255,.55)"
+    }
+  }, fmtNum(totalScrapQty), " kg phế liệu")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minHeight: 200
+    }
+  }, scrapByStagePie.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "rgba(255,255,255,.5)",
+      fontSize: 14,
+      textAlign: "center",
+      paddingTop: 60
+    }
+  }, "Chưa có dữ liệu phế liệu.") : /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: "100%",
+    height: 200
+  }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
+    data: scrapByStagePie,
+    dataKey: "value",
+    nameKey: "name",
+    innerRadius: 45,
+    outerRadius: 78,
+    paddingAngle: 3
+  }, scrapByStagePie.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
+    key: i,
+    fill: d.color
+  }))), /*#__PURE__*/React.createElement(Tooltip, {
+    formatter: v => `${fmtNum(v)} kg`,
+    contentStyle: {
+      background: "#0F2340",
+      border: "1px solid rgba(255,255,255,.2)",
+      borderRadius: 8,
+      color: "#fff"
+    }
+  }))), scrapByStagePie.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "6px 14px",
+      justifyContent: "center",
+      marginTop: 8
+    }
+  }, scrapByStagePie.map(d => /*#__PURE__*/React.createElement("span", {
+    key: d.name,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 5,
+      fontSize: 12,
+      color: "rgba(255,255,255,.75)"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 9,
+      height: 9,
+      borderRadius: 999,
+      background: d.color
+    }
+  }), d.name))))))));
 }
 function MachineGroup({
   type,
@@ -12786,6 +13271,42 @@ function AppInner() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [kioskMode, setKioskMode] = useState(false);
+  const [tvRotationOn, setTvRotationOn] = useState(false);
+  const TV_ROTATION_SEQ = [{
+    tab: "tvmode",
+    ms: 10 * 60 * 1000
+  }, {
+    tab: "dashboard",
+    ms: 5 * 60 * 1000
+  }, {
+    tab: "orders",
+    ms: 5 * 60 * 1000
+  }, {
+    tab: "machines",
+    ms: 5 * 60 * 1000
+  }, {
+    tab: "qc",
+    ms: 5 * 60 * 1000
+  }, {
+    tab: "reports",
+    ms: 5 * 60 * 1000
+  }, {
+    tab: "staff",
+    ms: 5 * 60 * 1000
+  }];
+  const tvRotationIdx = React.useRef(0);
+  useEffect(() => {
+    if (!tvRotationOn) return;
+    tvRotationIdx.current = 0;
+    setActiveTab(TV_ROTATION_SEQ[0].tab);
+    let timer = setTimeout(function step() {
+      tvRotationIdx.current = (tvRotationIdx.current + 1) % TV_ROTATION_SEQ.length;
+      const next = TV_ROTATION_SEQ[tvRotationIdx.current];
+      setActiveTab(next.tab);
+      timer = setTimeout(step, next.ms);
+    }, TV_ROTATION_SEQ[0].ms);
+    return () => clearTimeout(timer);
+  }, [tvRotationOn]); // eslint-disable-line
   const KIOSK_IDLE_MS = 5 * 60 * 1000; // 5 phút không thao tác -> vào chế độ trình chiếu
   const KIOSK_STEP_MS = 60 * 1000; // mỗi mục hiển thị 60 giây
   const KIOSK_TABS = ["dashboard", "orders", "machines", "qc", "reports", "staff"];
@@ -12799,10 +13320,15 @@ function AppInner() {
   useEffect(() => {
     kioskModeRef.current = kioskMode;
   }, [kioskMode]);
+  const tvRotationOnRef = React.useRef(false);
+  useEffect(() => {
+    tvRotationOnRef.current = tvRotationOn;
+  }, [tvRotationOn]);
   useEffect(() => {
     if (!currentUser) return;
     let idleTimer = null;
     const resetIdleTimer = () => {
+      if (tvRotationOnRef.current) return; // Đang ở Chế độ TV xưởng — không can thiệp
       if (kioskModeRef.current) {
         // Có người thao tác trong lúc đang trình chiếu -> thoát ngay, quay lại trang trước đó
         setKioskMode(false);
@@ -12810,6 +13336,7 @@ function AppInner() {
       }
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
+        if (tvRotationOnRef.current) return;
         kioskPrevTab.current = activeTabRef.current;
         kioskStepIndex.current = 0;
         setKioskMode(true);
@@ -13340,6 +13867,7 @@ function AppInner() {
     orders: "Đơn hàng & BOM",
     machines: "Máy móc thiết bị",
     downtime: "Theo dõi thời gian dừng máy",
+    tvmode: "Chế độ TV xưởng",
     qc: "Chất lượng & phế liệu",
     staff: "Nhân sự",
     reports: "Báo cáo & biểu đồ",
@@ -13359,6 +13887,7 @@ function AppInner() {
     active: activeTab,
     onChange: key => {
       setActiveTab(key);
+      setTvRotationOn(key === "tvmode");
       setMobileNavOpen(false);
     },
     role: currentUser.role,
@@ -13392,7 +13921,38 @@ function AppInner() {
   }, /*#__PURE__*/React.createElement(RefreshCw, {
     size: 15,
     className: "pulse-dot"
-  }), "Chế độ trình chiếu tự động — ", pageTitles[activeTab], " · Chạm màn hình để thoát"), /*#__PURE__*/React.createElement(TopBar, {
+  }), "Chế độ trình chiếu tự động — ", pageTitles[activeTab], " · Chạm màn hình để thoát"), tvRotationOn && activeTab !== "tvmode" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 5000,
+      background: "linear-gradient(90deg, #0F2340, #0A1628)",
+      color: "#fff",
+      padding: "8px 18px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      fontSize: 13,
+      fontWeight: 700,
+      boxShadow: "0 2px 10px rgba(0,0,0,.25)"
+    }
+  }, /*#__PURE__*/React.createElement(TvIcon, {
+    size: 15
+  }), "Đang trình chiếu Chế độ TV xưởng — ", pageTitles[activeTab], /*#__PURE__*/React.createElement("button", {
+    onClick: () => setTvRotationOn(false),
+    style: {
+      background: "rgba(255,255,255,.15)",
+      border: "1px solid rgba(255,255,255,.3)",
+      borderRadius: 6,
+      color: "#fff",
+      padding: "3px 10px",
+      cursor: "pointer",
+      fontSize: 12
+    }
+  }, "⏸ Tạm dừng")), /*#__PURE__*/React.createElement(TopBar, {
     currentUser: currentUser,
     onLogout: () => setCurrentUser(null),
     pageTitle: pageTitles[activeTab],
@@ -13443,6 +14003,12 @@ function AppInner() {
     onAdd: handleAddDowntimeRecord,
     onUpdate: handleUpdateDowntimeRecord,
     onDelete: handleDeleteDowntimeRecord
+  }), activeTab === "tvmode" && /*#__PURE__*/React.createElement(TVModePage, {
+    machines: data.machines,
+    orders: data.orders,
+    scrap: data.scrap,
+    tvRotationOn: tvRotationOn,
+    onToggleRotation: setTvRotationOn
   }), activeTab === "qc" && /*#__PURE__*/React.createElement(QCPage, {
     scrap: data.scrap,
     isAdmin: isAdmin,
