@@ -6954,8 +6954,11 @@ function TVModePage({
   machines,
   orders,
   scrap,
+  staff,
+  attendance,
   tvRotationOn,
-  onToggleRotation
+  onToggleRotation,
+  onExit
 }) {
   const [now, setNow] = useState(() => new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -6987,6 +6990,64 @@ function TVModePage({
   }, [machines]);
   const totalMachines = machines.length;
   const stoppedMachines = totalMachines - machineCounts.running;
+  const machinePie = useMemo(() => [{
+    name: "Đang chạy",
+    value: machineCounts.running,
+    color: "#4ADE80"
+  }, {
+    name: "Tạm nghỉ",
+    value: machineCounts.idle,
+    color: "#FBBF24"
+  }, {
+    name: "Bảo trì",
+    value: machineCounts.maintenance,
+    color: "#60A5FA"
+  }, {
+    name: "Hỏng/Dừng",
+    value: machineCounts.broken,
+    color: "#F87171"
+  }].filter(d => d.value > 0), [machineCounts]);
+  const todayKey = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayAttendance = attendance?.[todayKey] || {};
+  const staffStats = useMemo(() => {
+    const s = {
+      total: (staff || []).length,
+      present: 0,
+      leavePaid: 0,
+      leaveUnpaid: 0,
+      late: 0,
+      early: 0
+    };
+    (staff || []).forEach(m => {
+      const rec = todayAttendance[m.id] || {};
+      if (rec.caNgay || rec.caDem) s.present++;
+      if (rec.nghiPhep) s.leavePaid++;
+      if (rec.nghiKhongPhep) s.leaveUnpaid++;
+      if (rec.diLamMuon) s.late++;
+      if (rec.veSom) s.early++;
+    });
+    return s;
+  }, [staff, todayAttendance]);
+  const staffPie = useMemo(() => {
+    const absent = staffStats.total - staffStats.present - staffStats.leavePaid - staffStats.leaveUnpaid;
+    return [{
+      name: "Đang làm việc",
+      value: staffStats.present,
+      color: "#4ADE80"
+    }, {
+      name: "Nghỉ phép",
+      value: staffStats.leavePaid,
+      color: "#60A5FA"
+    }, {
+      name: "Nghỉ không phép",
+      value: staffStats.leaveUnpaid,
+      color: "#F87171"
+    }, {
+      name: "Chưa chấm công",
+      value: Math.max(0, absent),
+      color: "rgba(255,255,255,.25)"
+    }].filter(d => d.value > 0);
+  }, [staffStats]);
   const activeOrders = useMemo(() => orders.map(o => ({
     order: o,
     prog: orderProgress(o)
@@ -7005,6 +7066,12 @@ function TVModePage({
   const totalScrapQty = scrapByStagePie.reduce((a, d) => a + d.value, 0);
   const totalProductionAll = useMemo(() => STAGES.reduce((a, s) => a + orders.reduce((aa, o) => aa + (o.stages?.[s.key]?.done || 0), 0), 0), [orders]);
   const scrapPct = totalProductionAll + totalScrapQty > 0 ? totalScrapQty / (totalProductionAll + totalScrapQty) * 100 : 0;
+  const tvTooltipStyle = {
+    background: "#0F2340",
+    border: "1px solid rgba(255,255,255,.2)",
+    borderRadius: 8,
+    color: "#fff"
+  };
   return /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
@@ -7014,7 +7081,8 @@ function TVModePage({
       color: "#fff",
       overflowY: "auto",
       padding: "28px 36px",
-      fontFamily: FONT_BODY
+      fontFamily: FONT_BODY,
+      zoom: 1.3
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7050,7 +7118,56 @@ function TVModePage({
       fontSize: 14,
       color: "rgba(255,255,255,.6)"
     }
-  }, "Bảng điều khiển xưởng sản xuất — thời gian thực"))), /*#__PURE__*/React.createElement("div", {
+  }, "Bảng điều khiển xưởng sản xuất — thời gian thực")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 12,
+      marginLeft: 8
+    }
+  }, [{
+    code: "ISO 9001",
+    color: "#2563EB"
+  }, {
+    code: "ISO 14001",
+    color: "#16A34A"
+  }, {
+    code: "ISO 45001",
+    color: "#EA580C"
+  }].map(iso => /*#__PURE__*/React.createElement("div", {
+    key: iso.code,
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 2
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: 34,
+    height: 18,
+    viewBox: "0 0 34 18"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M2 17 A15 15 0 0 1 32 17",
+    fill: "none",
+    stroke: iso.color,
+    strokeWidth: 1.3
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M2 17 A15 8 0 0 1 32 17 M9 17 A15 15 0 0 1 17 3 M25 17 A15 15 0 0 1 17 3",
+    fill: "none",
+    stroke: iso.color,
+    strokeWidth: 1
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: iso.color,
+      border: `1.5px solid ${iso.color}`,
+      borderRadius: 5,
+      padding: "3px 9px",
+      fontSize: 13,
+      fontWeight: 800,
+      color: "#fff",
+      letterSpacing: ".02em",
+      whiteSpace: "nowrap"
+    }
+  }, iso.code))))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",
@@ -7106,20 +7223,38 @@ function TVModePage({
       fontSize: 12.5,
       fontWeight: 700
     }
-  }, tvRotationOn ? "⏸ Đang trình chiếu — Tạm dừng" : "▶ Bắt đầu trình chiếu tự động"))),
+  }, tvRotationOn ? "⏸ Đang trình chiếu — Tạm dừng" : "▶ Bắt đầu trình chiếu tự động"), onExit && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      onExit();
+    },
+    title: "Thoát chế độ TV, quay lại giao diện quản lý bình thường",
+    style: {
+      background: "rgba(239,68,68,.18)",
+      border: "1px solid rgba(239,68,68,.5)",
+      borderRadius: 8,
+      color: "#F87171",
+      padding: "8px 12px",
+      cursor: "pointer",
+      fontSize: 12.5,
+      fontWeight: 700
+    }
+  }, "✕ Thoát chế độ TV"))),
   /* 3 khối chính */
   /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
-      gridTemplateColumns: "1fr 1.3fr 1fr",
+      gridTemplateColumns: "1fr 1fr 1.2fr 1fr",
       gap: 22
     }
   },
   /* Khối 1: Máy móc */
   /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "rgba(255,255,255,.06)",
-      border: "1px solid rgba(255,255,255,.12)",
+      background: "rgba(96,165,250,.08)",
+      border: "1.5px solid rgba(96,165,250,.45)",
+      borderTop: "3px solid #60A5FA",
+      boxShadow: "0 4px 14px rgba(96,165,250,.15)",
       borderRadius: 18,
       padding: 22
     }
@@ -7239,12 +7374,198 @@ function TVModePage({
       fontWeight: 800,
       color: row.color
     }
-  }, row.val)))),
+  }, row.val))), machinePie.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      display: "flex",
+      alignItems: "center",
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: 110,
+    height: 110
+  }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
+    data: machinePie,
+    dataKey: "value",
+    nameKey: "name",
+    innerRadius: 28,
+    outerRadius: 50,
+    paddingAngle: 2
+  }, machinePie.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
+    key: i,
+    fill: d.color
+  }))), /*#__PURE__*/React.createElement(Tooltip, {
+    formatter: v => `${v} máy`,
+    contentStyle: tvTooltipStyle
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 5
+    }
+  }, machinePie.map(d => /*#__PURE__*/React.createElement("span", {
+    key: d.name,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      fontSize: 12,
+      color: "rgba(255,255,255,.8)"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: 999,
+      background: d.color
+    }
+  }), d.name, ": ", d.value))))),
+  /* Khối 1b: Nhân sự */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(167,139,250,.08)",
+      border: "1.5px solid rgba(167,139,250,.45)",
+      borderTop: "3px solid #A78BFA",
+      boxShadow: "0 4px 14px rgba(167,139,250,.15)",
+      borderRadius: 18,
+      padding: 22
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.7)",
+      marginBottom: 18,
+      textTransform: "uppercase"
+    }
+  }, "👥 Nhân sự"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 14,
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(34,197,94,.15)",
+      border: "1.5px solid rgba(34,197,94,.5)",
+      borderRadius: 14,
+      padding: "16px 10px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 38,
+      fontWeight: 800,
+      color: "#4ADE80",
+      lineHeight: 1
+    }
+  }, staffStats.present), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      marginTop: 6,
+      color: "rgba(255,255,255,.75)"
+    }
+  }, "ĐANG LÀM VIỆC")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(255,255,255,.08)",
+      border: "1.5px solid rgba(255,255,255,.25)",
+      borderRadius: 14,
+      padding: "16px 10px",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 38,
+      fontWeight: 800,
+      color: "#fff",
+      lineHeight: 1
+    }
+  }, staffStats.total), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      marginTop: 6,
+      color: "rgba(255,255,255,.75)"
+    }
+  }, "TỔNG SĨ SỐ"))), [{
+    label: "Nghỉ phép",
+    val: staffStats.leavePaid,
+    color: "#60A5FA"
+  }, {
+    label: "Nghỉ không phép",
+    val: staffStats.leaveUnpaid,
+    color: "#F87171"
+  }, {
+    label: "Đi làm muộn",
+    val: staffStats.late,
+    color: "#FB923C"
+  }, {
+    label: "Về sớm",
+    val: staffStats.early,
+    color: "#F472B6"
+  }].map(row => /*#__PURE__*/React.createElement("div", {
+    key: row.label,
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "6px 0",
+      borderTop: "1px solid rgba(255,255,255,.1)",
+      fontSize: 13
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      color: "rgba(255,255,255,.85)"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: 999,
+      background: row.color
+    }
+  }), row.label), /*#__PURE__*/React.createElement("span", {
+    className: "mes-mono",
+    style: {
+      fontWeight: 800,
+      color: row.color
+    }
+  }, row.val))), staffPie.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      display: "flex",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
+    width: 140,
+    height: 140
+  }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
+    data: staffPie,
+    dataKey: "value",
+    nameKey: "name",
+    innerRadius: 36,
+    outerRadius: 62,
+    paddingAngle: 2
+  }, staffPie.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
+    key: i,
+    fill: d.color
+  }))), /*#__PURE__*/React.createElement(Tooltip, {
+    formatter: v => `${v} người`,
+    contentStyle: tvTooltipStyle
+  }))))),
   /* Khối 2: Tiến độ đơn hàng */
   /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "rgba(255,255,255,.06)",
-      border: "1px solid rgba(255,255,255,.12)",
+      background: "rgba(251,191,36,.08)",
+      border: "1.5px solid rgba(251,191,36,.45)",
+      borderTop: "3px solid #FBBF24",
+      boxShadow: "0 4px 14px rgba(251,191,36,.15)",
       borderRadius: 18,
       padding: 22
     }
@@ -7317,8 +7638,10 @@ function TVModePage({
   /* Khối 3: Tỷ lệ phế liệu */
   /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "rgba(255,255,255,.06)",
-      border: "1px solid rgba(255,255,255,.12)",
+      background: "rgba(248,113,113,.08)",
+      border: "1.5px solid rgba(248,113,113,.45)",
+      borderTop: "3px solid #F87171",
+      boxShadow: "0 4px 14px rgba(248,113,113,.15)",
       borderRadius: 18,
       padding: 22,
       display: "flex",
@@ -14007,8 +14330,14 @@ function AppInner() {
     machines: data.machines,
     orders: data.orders,
     scrap: data.scrap,
+    staff: data.staff,
+    attendance: data.attendance,
     tvRotationOn: tvRotationOn,
-    onToggleRotation: setTvRotationOn
+    onToggleRotation: setTvRotationOn,
+    onExit: () => {
+      setTvRotationOn(false);
+      setActiveTab("dashboard");
+    }
   }), activeTab === "qc" && /*#__PURE__*/React.createElement(QCPage, {
     scrap: data.scrap,
     isAdmin: isAdmin,
