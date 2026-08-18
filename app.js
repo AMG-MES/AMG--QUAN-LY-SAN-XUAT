@@ -6981,6 +6981,41 @@ function DowntimeEditModal({
   }), " Lưu thay đổi"));
 }
 /* ===================== CHẾ ĐỘ TV XƯỞNG ===================== */
+function tvDeliveryInfo(order) {
+  if (!order.deliveryDate) {
+    return {
+      label: "Chưa có lịch giao hàng",
+      color: "rgba(255,255,255,.4)"
+    };
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(order.deliveryDate + "T00:00:00");
+  const diffDays = Math.round((due - today) / 86400000);
+  const dateLabel = fmtDate(order.deliveryDate);
+  if (diffDays < 0) {
+    return {
+      label: `⛔ Trễ hạn ${dateLabel} (quá ${Math.abs(diffDays)} ngày)`,
+      color: "#F87171"
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      label: `⏰ Giao hôm nay · ${dateLabel}`,
+      color: "#F87171"
+    };
+  }
+  if (diffDays <= 3) {
+    return {
+      label: `🟡 Giao ${dateLabel} (còn ${diffDays} ngày)`,
+      color: "#FBBF24"
+    };
+  }
+  return {
+    label: `📅 Giao ${dateLabel}`,
+    color: "rgba(255,255,255,.55)"
+  };
+}
 function TVModePage({
   machines,
   orders,
@@ -7693,6 +7728,13 @@ function TVModePage({
       color: "#FBBF24"
     }
   }, Math.round(prog.pct || 0), "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      marginBottom: 6,
+      color: tvDeliveryInfo(order).color,
+      fontWeight: 600
+    }
+  }, tvDeliveryInfo(order).label), /*#__PURE__*/React.createElement("div", {
     style: {
       height: 9,
       borderRadius: 999,
