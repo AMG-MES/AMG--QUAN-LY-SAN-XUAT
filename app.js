@@ -5376,6 +5376,7 @@ function emptyOrderForm() {
   return {
     customer: "",
     orderDate: new Date().toISOString().slice(0, 10),
+    deliveryDate: "",
     spec: "",
     materialCode: "",
     quantity: "",
@@ -5432,6 +5433,16 @@ function OrderForm({
     onChange: e => setForm(f => ({
       ...f,
       orderDate: e.target.value
+    }))
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "Lịch giao hàng"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "mes-input",
+    type: "date",
+    value: form.deliveryDate || "",
+    onChange: e => setForm(f => ({
+      ...f,
+      deliveryDate: e.target.value
     }))
   })), /*#__PURE__*/React.createElement(Field, {
     label: "Quy cách"
@@ -5779,6 +5790,17 @@ function OrderModal({
       fontSize: 15
     }
   }, fmtDate(order.orderDate))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: COLORS.textFaint
+    }
+  }, "Lịch giao hàng"), /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 15,
+      color: order.deliveryDate ? COLORS.text : COLORS.textFaint
+    }
+  }, order.deliveryDate ? fmtDate(order.deliveryDate) : "—")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12.5,
       color: COLORS.textFaint
@@ -6159,7 +6181,7 @@ function OrdersPage({
     checked: allSelected,
     onChange: toggleSelectAll,
     title: "Chọn tất cả"
-  })), /*#__PURE__*/React.createElement("th", null, "Khách hàng"), /*#__PURE__*/React.createElement("th", null, "Ngày xuống đơn"), /*#__PURE__*/React.createElement("th", null, "Quy cách"), /*#__PURE__*/React.createElement("th", null, "Mã liệu"), /*#__PURE__*/React.createElement("th", null, "Số lượng"), /*#__PURE__*/React.createElement("th", null, "Còn lại"), /*#__PURE__*/React.createElement("th", null, "Tiến trình công đoạn"), /*#__PURE__*/React.createElement("th", null, "Tiến độ"), /*#__PURE__*/React.createElement("th", null, "Trạng thái"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, filtered.map(o => {
+  })), /*#__PURE__*/React.createElement("th", null, "Khách hàng"), /*#__PURE__*/React.createElement("th", null, "Ngày xuống đơn"), /*#__PURE__*/React.createElement("th", null, "Lịch giao hàng"), /*#__PURE__*/React.createElement("th", null, "Quy cách"), /*#__PURE__*/React.createElement("th", null, "Mã liệu"), /*#__PURE__*/React.createElement("th", null, "Số lượng"), /*#__PURE__*/React.createElement("th", null, "Còn lại"), /*#__PURE__*/React.createElement("th", null, "Tiến trình công đoạn"), /*#__PURE__*/React.createElement("th", null, "Tiến độ"), /*#__PURE__*/React.createElement("th", null, "Trạng thái"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, filtered.map(o => {
     const prog = orderProgress(o);
     return /*#__PURE__*/React.createElement("tr", {
       key: o.id,
@@ -6186,6 +6208,11 @@ function OrdersPage({
         color: COLORS.textDim
       }
     }, o.orderDate ? fmtDate(o.orderDate) : "—"), /*#__PURE__*/React.createElement("td", {
+      className: "mes-mono",
+      style: {
+        color: o.deliveryDate ? COLORS.text : COLORS.textFaint
+      }
+    }, o.deliveryDate ? fmtDate(o.deliveryDate) : "—"), /*#__PURE__*/React.createElement("td", {
       className: "mes-mono"
     }, o.spec), /*#__PURE__*/React.createElement("td", null, o.materialCode || "—"), /*#__PURE__*/React.createElement("td", {
       className: "mes-mono"
@@ -7084,16 +7111,16 @@ function TVModePage({
       background: "linear-gradient(160deg, #0A1628, #0F2340)",
       color: "#fff",
       overflowY: "auto",
-      padding: "28px 36px",
+      padding: "16px 26px",
       fontFamily: FONT_BODY,
-      zoom: 1.3
+      zoom: 0.92
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 14,
-      marginBottom: 26
+      gap: 10,
+      marginBottom: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7165,7 +7192,7 @@ function TVModePage({
       alignItems: "center",
       flexWrap: "wrap",
       gap: 14,
-      paddingTop: 14,
+      paddingTop: 10,
       borderTop: "1px solid rgba(255,255,255,.12)"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -7206,7 +7233,7 @@ function TVModePage({
     src: b.img,
     alt: b.code,
     style: {
-      height: 34,
+      height: 28,
       width: "auto",
       flexShrink: 0
     }
@@ -7285,8 +7312,8 @@ function TVModePage({
   /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
-      gridTemplateColumns: "1fr 1fr 1.2fr 1fr",
-      gap: 22
+      gridTemplateColumns: "1fr 1fr",
+      gap: 14
     }
   },
   /* Khối 1: Máy móc */
@@ -7297,7 +7324,7 @@ function TVModePage({
       borderTop: "3px solid #60A5FA",
       boxShadow: "0 4px 14px rgba(96,165,250,.15)",
       borderRadius: 18,
-      padding: 22
+      padding: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7423,8 +7450,8 @@ function TVModePage({
       gap: 14
     }
   }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
-    width: 110,
-    height: 110
+    width: 92,
+    height: 92
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: machinePie,
     dataKey: "value",
@@ -7469,7 +7496,7 @@ function TVModePage({
       borderTop: "3px solid #A78BFA",
       boxShadow: "0 4px 14px rgba(167,139,250,.15)",
       borderRadius: 18,
-      padding: 22
+      padding: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7584,8 +7611,8 @@ function TVModePage({
       justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
-    width: 140,
-    height: 140
+    width: 110,
+    height: 110
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: staffPie,
     dataKey: "value",
@@ -7608,7 +7635,7 @@ function TVModePage({
       borderTop: "3px solid #FBBF24",
       boxShadow: "0 4px 14px rgba(251,191,36,.15)",
       borderRadius: 18,
-      padding: 22
+      padding: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7629,7 +7656,10 @@ function TVModePage({
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 14
+      gap: 12,
+      maxHeight: 420,
+      overflowY: "auto",
+      paddingRight: 4
     }
   }, activeOrders.map(({
     order,
@@ -7675,7 +7705,7 @@ function TVModePage({
       width: `${clamp(prog.pct || 0, 0, 100)}%`,
       background: "linear-gradient(90deg, #F59E0B, #FBBF24)"
     }
-  }))))),
+  })))))),
   /* Khối 3: Tỷ lệ phế liệu */
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7684,7 +7714,7 @@ function TVModePage({
       borderTop: "3px solid #F87171",
       boxShadow: "0 4px 14px rgba(248,113,113,.15)",
       borderRadius: 18,
-      padding: 22,
+      padding: 16,
       display: "flex",
       flexDirection: "column"
     }
@@ -7717,7 +7747,7 @@ function TVModePage({
   }, fmtNum(totalScrapQty), " kg phế liệu")), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      minHeight: 200
+      minHeight: 150
     }
   }, scrapByStagePie.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7728,7 +7758,7 @@ function TVModePage({
     }
   }, "Chưa có dữ liệu phế liệu.") : /*#__PURE__*/React.createElement(ResponsiveContainer, {
     width: "100%",
-    height: 200
+    height: 150
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: scrapByStagePie,
     dataKey: "value",
@@ -7771,7 +7801,7 @@ function TVModePage({
       borderRadius: 999,
       background: d.color
     }
-  }), d.name))))))));
+  }), d.name)))))));
 }
 function MachineGroup({
   type,
