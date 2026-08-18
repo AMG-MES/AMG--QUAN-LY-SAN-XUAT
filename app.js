@@ -1342,52 +1342,62 @@ const NAV_ITEMS = [{
   key: "dashboard",
   label: "Tổng quan & Nhập liệu",
   icon: LayoutDashboard,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#2563EB"
 }, {
   key: "orders",
   label: "Đơn hàng & BOM",
   icon: ClipboardList,
-  roles: ["admin"]
+  roles: ["admin"],
+  color: "#7C3AED"
 }, {
   key: "machines",
   label: "Máy móc thiết bị",
   icon: Cog,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#EA580C"
 }, {
   key: "downtime",
   label: "Theo dõi thời gian dừng máy",
   icon: History,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#DB2777"
 }, {
   key: "tvmode",
   label: "Chế độ TV xưởng",
   icon: TvIcon,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#0EA5E9"
 }, {
   key: "qc",
   label: "Chất lượng & Phế liệu",
   icon: FlaskConical,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#16A34A"
 }, {
   key: "staff",
   label: "Nhân sự",
   icon: Users,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#CA8A04"
 }, {
   key: "certificates",
   label: "Chứng nhận ISO - UL",
   icon: AwardIcon,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#0D9488"
 }, {
   key: "reports",
   label: "Báo cáo & Biểu đồ",
   icon: BarChart3,
-  roles: ["admin", "employee"]
+  roles: ["admin", "employee"],
+  color: "#C2652F"
 }, {
   key: "admin",
   label: "Quản trị hệ thống",
   icon: ShieldCheck,
-  roles: ["admin"]
+  roles: ["admin"],
+  color: "#94A3B8"
 }];
 
 /* ===================== SEED DATA (từ tệp báo cáo thực tế người dùng tải lên) ===================== */
@@ -4456,23 +4466,25 @@ function Sidebar({
         alignItems: "center",
         gap: 11,
         width: "100%",
-        padding: "10px 12px",
+        padding: "10px 12px 10px 9px",
         marginBottom: 4,
         borderRadius: 9,
         border: "none",
+        borderLeft: `3px solid ${item.color || "transparent"}`,
         cursor: "pointer",
         textAlign: "left",
-        background: isActive ? "#FFFFFF" : "transparent",
+        background: isActive ? "#FFFFFF" : "rgba(255,255,255,.06)",
         color: isActive ? COLORS.sidebarActiveText : SB_TEXT_DIM,
         fontSize: 13,
         fontWeight: isActive ? 700 : 500,
         boxShadow: isActive ? "0 3px 10px rgba(0,0,0,.18)" : "none",
-        transition: "background .12s ease, color .12s ease"
+        transition: "background .12s ease, color .12s ease, border-color .12s ease"
       }
     }, /*#__PURE__*/React.createElement(Icon, {
       size: 16,
       style: {
-        flexShrink: 0
+        flexShrink: 0,
+        color: item.color || "currentColor"
       }
     }), !collapsed && /*#__PURE__*/React.createElement("span", {
       style: {
@@ -7240,19 +7252,23 @@ function TVModePage({
   }, [{
     img: BADGE_ISO9001_URI,
     code: "ISO 9001",
-    sub: "QUALITY"
+    sub: "QUALITY",
+    color: "#3B82F6"
   }, {
     img: BADGE_ISO14001_URI,
     code: "ISO 14001",
-    sub: "ENVIRONMENT"
+    sub: "ENVIRONMENT",
+    color: "#22C55E"
   }, {
     img: BADGE_ISO45001_URI,
     code: "ISO 45001",
-    sub: "SAFETY"
+    sub: "SAFETY",
+    color: "#F59E0B"
   }, {
     img: BADGE_UL_URI,
     code: "UL",
-    sub: "CERTIFIED"
+    sub: "CERTIFIED",
+    color: "#A78BFA"
   }].map(b => /*#__PURE__*/React.createElement("div", {
     key: b.code,
     style: {
@@ -7260,7 +7276,8 @@ function TVModePage({
       alignItems: "center",
       gap: 8,
       background: "rgba(255,255,255,.06)",
-      border: "1px solid rgba(255,255,255,.14)",
+      border: `1.5px solid ${b.color}`,
+      boxShadow: `0 0 0 1px ${b.color}33, 0 0 10px 0 ${b.color}26`,
       borderRadius: 10,
       padding: "5px 12px 5px 6px"
     }
