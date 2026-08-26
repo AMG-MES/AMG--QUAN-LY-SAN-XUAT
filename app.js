@@ -7049,6 +7049,41 @@ function TVModePage({
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
+  const tvFitRef = useRef(null);
+  const [tvZoom, setTvZoom] = useState(0.92);
+  React.useLayoutEffect(() => {
+    const el = tvFitRef.current;
+    if (!el) return;
+    function fit() {
+      const naturalW = el.scrollWidth;
+      const naturalH = el.scrollHeight;
+      const availW = window.innerWidth;
+      const availH = window.innerHeight;
+      if (!naturalW || !naturalH || !availW || !availH) return;
+      const rect = el.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const currentOwnZoom = parseFloat(el.style.zoom) || 1;
+      // Account for any ancestor CSS zoom (e.g. .mes-app-shell) already scaling
+      // this element's rendered size, so the fit works regardless of that value.
+      const ancestorMult = (rect.width / naturalW / currentOwnZoom + rect.height / naturalH / currentOwnZoom) / 2;
+      if (!ancestorMult || !isFinite(ancestorMult)) return;
+      const targetScale = Math.min(availW / naturalW, availH / naturalH) * 0.985;
+      let z = targetScale / ancestorMult;
+      z = Math.max(0.35, Math.min(z, 1.5));
+      setTvZoom(prev => Math.abs(prev - z) > 0.008 ? z : prev);
+    }
+    fit();
+    window.addEventListener("resize", fit);
+    let ro;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(fit);
+      ro.observe(el);
+    }
+    return () => {
+      window.removeEventListener("resize", fit);
+      if (ro) ro.disconnect();
+    };
+  }, []);
   function toggleFullscreen() {
     if (document.fullscreenElement) {
       document.exitFullscreen();
@@ -7156,11 +7191,21 @@ function TVModePage({
       inset: 0,
       zIndex: 4000,
       background: "linear-gradient(160deg, #0A1628, #0F2340)",
-      color: "#fff",
-      overflowY: "auto",
+      overflow: "hidden",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: tvFitRef,
+    style: {
+      width: 1860,
+      flexShrink: 0,
       padding: "16px 26px",
+      boxSizing: "border-box",
       fontFamily: FONT_BODY,
-      zoom: 0.92
+      color: "#fff",
+      zoom: tvZoom
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7860,7 +7905,7 @@ function TVModePage({
       borderRadius: 999,
       background: d.color
     }
-  }), d.name)))))));
+  }), d.name))))))));
 }
 function MachineGroup({
   type,
