@@ -6288,6 +6288,7 @@ function fmtDuration(ms) {
 }
 function MachineStatusModal({
   machine,
+  orders,
   isAdmin,
   canDelete,
   onClose,
@@ -6302,6 +6303,26 @@ function MachineStatusModal({
   const [customerName, setCustomerName] = useState(machine.customerName || "");
   const [currentOD, setCurrentOD] = useState(machine.currentOD || "");
   const [showLog, setShowLog] = useState(false);
+  // Danh sách khách hàng / OD lấy từ đơn hàng thực tế (trang Đơn hàng & BOM) — để
+  // người dùng CHỌN thay vì phải gõ tay từng chữ (tránh gõ sai chính tả).
+  const customerOptions = useMemo(() => {
+    const set = new Set();
+    (orders || []).forEach(o => {
+      if (o.customer) set.add(String(o.customer).trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "vi"));
+  }, [orders]);
+  const odOptions = useMemo(() => {
+    const set = new Set();
+    (orders || []).forEach(o => {
+      if (o.spec) set.add(String(o.spec).trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "vi", {
+      numeric: true
+    }));
+  }, [orders]);
+  const [customerCustom, setCustomerCustom] = useState(() => !!machine.customerName && !customerOptions.includes(machine.customerName));
+  const [odCustom, setOdCustom] = useState(() => !!machine.currentOD && !odOptions.includes(machine.currentOD));
   const downtimeLog = useMemo(() => [...(machine.downtimeLog || [])].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)), [machine.downtimeLog]);
   const stats = useMemo(() => {
     const now = Date.now();
@@ -6395,20 +6416,46 @@ function MachineStatusModal({
     }
   }, /*#__PURE__*/React.createElement(Field, {
     label: "Tên khách hàng"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("select", {
     disabled: !isAdmin,
     className: "mes-input",
     style: {
       fontSize: 17,
       fontWeight: 700,
       padding: "14px 14px"
+    },
+    value: customerCustom ? "__custom__" : customerName,
+    onChange: e => {
+      if (e.target.value === "__custom__") {
+        setCustomerCustom(true);
+      } else {
+        setCustomerCustom(false);
+        setCustomerName(e.target.value);
+      }
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Chọn khách hàng —"), customerOptions.map(c => /*#__PURE__*/React.createElement("option", {
+    key: c,
+    value: c
+  }, c)), /*#__PURE__*/React.createElement("option", {
+    value: "__custom__"
+  }, "✏️ Nhập tên khác...")), customerCustom && /*#__PURE__*/React.createElement("input", {
+    disabled: !isAdmin,
+    className: "mes-input",
+    style: {
+      fontSize: 17,
+      fontWeight: 700,
+      padding: "14px 14px",
+      marginTop: 8
     },
     value: customerName,
     onChange: e => setCustomerName(e.target.value),
-    placeholder: "vd: SHENGSHING"
+    placeholder: "Nhập tên khách hàng",
+    autoFocus: true
   })), /*#__PURE__*/React.createElement(Field, {
     label: "OD sản phẩm đang chạy"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("select", {
     disabled: !isAdmin,
     className: "mes-input",
     style: {
@@ -6416,9 +6463,35 @@ function MachineStatusModal({
       fontWeight: 700,
       padding: "14px 14px"
     },
+    value: odCustom ? "__custom__" : currentOD,
+    onChange: e => {
+      if (e.target.value === "__custom__") {
+        setOdCustom(true);
+      } else {
+        setOdCustom(false);
+        setCurrentOD(e.target.value);
+      }
+    }
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Chọn OD —"), odOptions.map(od => /*#__PURE__*/React.createElement("option", {
+    key: od,
+    value: od
+  }, od)), /*#__PURE__*/React.createElement("option", {
+    value: "__custom__"
+  }, "✏️ Nhập OD khác...")), odCustom && /*#__PURE__*/React.createElement("input", {
+    disabled: !isAdmin,
+    className: "mes-input",
+    style: {
+      fontSize: 17,
+      fontWeight: 700,
+      padding: "14px 14px",
+      marginTop: 8
+    },
     value: currentOD,
     onChange: e => setCurrentOD(e.target.value),
-    placeholder: "vd: 0.254BC"
+    placeholder: "Nhập OD sản phẩm",
+    autoFocus: true
   }))), /*#__PURE__*/React.createElement(Field, {
     label: "Ghi chú / sự cố"
   }, /*#__PURE__*/React.createElement("textarea", {
@@ -8048,8 +8121,8 @@ function MachineGroup({
       onClick: () => onSelect(m),
       title: `${m.id} — ${st.label}`,
       style: {
-        border: `1px solid ${st.color}50`,
-        background: `${st.color}14`,
+        border: `2px solid ${st.color}`,
+        background: `${st.color}1a`,
         borderRadius: 8,
         padding: "8px 10px",
         cursor: "pointer",
@@ -8072,8 +8145,8 @@ function MachineGroup({
       className: "mes-mono",
       style: {
         fontSize: 12,
-        fontWeight: 700,
-        color: COLORS.text
+        fontWeight: 800,
+        color: st.color
       }
     }, m.id)), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -8125,6 +8198,7 @@ function MachineGroup({
 }
 function MachinesPage({
   machines,
+  orders,
   isAdmin,
   canEdit,
   onUpdateMachine,
@@ -8205,6 +8279,7 @@ function MachinesPage({
     onAddMachine: onAddMachine
   })), selected && /*#__PURE__*/React.createElement(MachineStatusModal, {
     machine: selected,
+    orders: orders,
     isAdmin: canEdit,
     canDelete: isAdmin,
     onClose: () => setSelected(null),
@@ -14555,6 +14630,7 @@ function AppInner() {
     onRestoreSeed: handleResetSeedData
   }), activeTab === "machines" && /*#__PURE__*/React.createElement(MachinesPage, {
     machines: data.machines,
+    orders: data.orders,
     isAdmin: isAdmin,
     canEdit: canEditStaffMachines,
     onUpdateMachine: handleUpdateMachine,
