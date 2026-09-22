@@ -7306,6 +7306,7 @@ function TVModePage({
   scrap,
   staff,
   attendance,
+  auditLog,
   tvRotationOn,
   onToggleRotation,
   onExit
@@ -7436,7 +7437,14 @@ function TVModePage({
   const activeOrders = useMemo(() => orders.map(o => ({
     order: o,
     prog: orderProgress(o)
-  })).filter(x => x.prog.statusLabel === "Đang sản xuất").sort((a, b) => (b.prog.pct || 0) - (a.prog.pct || 0)).slice(0, 8), [orders]);
+  })).filter(x => x.prog.statusLabel === "Đang sản xuất").sort((a, b) => (b.prog.pct || 0) - (a.prog.pct || 0)).slice(0, 12), [orders]);
+  // Hoạt động gần đây cho Chế độ TV — cùng logic lọc với ActivityFeed (bỏ Kéo trung vì đã
+  // có mục lịch sử riêng), nhưng KHÔNG giới hạn theo tổ vì màn hình TV hiển thị cho cả xưởng.
+  const tvActivityFeed = useMemo(() => (auditLog || []).filter(a => {
+    if (a.type === "production_entry") return a.stageKey !== "keo_trung";
+    if (a.type === "scrap_add") return true;
+    return false;
+  }).slice(0, 16), [auditLog]);
   const scrapByStagePie = useMemo(() => {
     const m = {};
     scrap.forEach(s => {
@@ -7911,7 +7919,77 @@ function TVModePage({
       color: "rgba(255,255,255,.5)",
       marginLeft: 3
     }
-  }, "(", totalMachines > 0 ? Math.round(d.value / totalMachines * 100) : 0, "%)"))))))),
+  }, "(", totalMachines > 0 ? Math.round(d.value / totalMachines * 100) : 0, "%)")))))),
+  /* Hoạt động gần đây — real-time, dùng chung nguồn dữ liệu auditLog với ActivityFeed */
+  /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 20,
+      paddingTop: 18,
+      borderTop: "1px solid rgba(255,255,255,.12)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 15,
+      fontWeight: 800,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.7)",
+      marginBottom: 14,
+      textTransform: "uppercase"
+    }
+  }, "🕒 Hoạt động gần đây"), tvActivityFeed.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "rgba(255,255,255,.5)",
+      fontSize: 14,
+      padding: "20px 0"
+    }
+  }, "Chưa có hoạt động nào.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 14,
+      maxHeight: 640,
+      overflowY: "auto",
+      paddingRight: 6
+    }
+  }, tvActivityFeed.map(a => {
+    const isScrap = a.type === "scrap_add";
+    return /*#__PURE__*/React.createElement("div", {
+      key: a.id,
+      style: {
+        display: "flex",
+        gap: 12,
+        alignItems: "flex-start"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 9,
+        height: 9,
+        borderRadius: 999,
+        background: isScrap ? "#F87171" : "#4ADE80",
+        marginTop: 7,
+        flexShrink: 0,
+        boxShadow: isScrap ? "0 0 0 4px rgba(248,113,113,.18)" : "0 0 0 4px rgba(74,222,128,.18)"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 15.5,
+        color: "rgba(255,255,255,.92)",
+        fontWeight: 600,
+        lineHeight: 1.35
+      }
+    }, a.detail), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12.5,
+        color: "rgba(255,255,255,.5)",
+        marginTop: 3
+      }
+    }, a.user, " · ", fmtDateTime(a.ts))));
+  })))),
   /* Khối 1b: Nhân sự */
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8117,10 +8195,10 @@ function TVModePage({
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 12,
-      maxHeight: 420,
+      gap: 18,
+      maxHeight: 620,
       overflowY: "auto",
-      paddingRight: 4
+      paddingRight: 6
     }
   }, activeOrders.map(({
     order,
@@ -8131,8 +8209,9 @@ function TVModePage({
     style: {
       display: "flex",
       justifyContent: "space-between",
-      fontSize: 14,
-      marginBottom: 5
+      alignItems: "baseline",
+      fontSize: 17,
+      marginBottom: 6
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -8140,7 +8219,7 @@ function TVModePage({
       overflow: "hidden",
       textOverflow: "ellipsis",
       whiteSpace: "nowrap",
-      maxWidth: "70%"
+      maxWidth: "68%"
     }
   }, order.customer, /*#__PURE__*/React.createElement("span", {
     style: {
@@ -8151,18 +8230,19 @@ function TVModePage({
     className: "mes-mono",
     style: {
       fontWeight: 800,
+      fontSize: 20,
       color: "#FBBF24"
     }
   }, Math.round(prog.pct || 0), "%")), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 11.5,
-      marginBottom: 6,
+      fontSize: 13.5,
+      marginBottom: 8,
       color: tvDeliveryInfo(order).color,
       fontWeight: 600
     }
   }, tvDeliveryInfo(order).label), /*#__PURE__*/React.createElement("div", {
     style: {
-      height: 9,
+      height: 14,
       borderRadius: 999,
       background: "rgba(255,255,255,.1)",
       overflow: "hidden"
@@ -14948,6 +15028,7 @@ function AppInner() {
     scrap: data.scrap,
     staff: data.staff,
     attendance: data.attendance,
+    auditLog: data.auditLog,
     tvRotationOn: tvRotationOn,
     onToggleRotation: setTvRotationOn,
     onExit: () => {
