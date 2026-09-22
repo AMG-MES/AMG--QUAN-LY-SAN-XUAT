@@ -4987,7 +4987,9 @@ function QuickEntryForm({
   const [qty, setQty] = useState("");
   const [note, setNote] = useState("Ca ngày");
   const [msg, setMsg] = useState("");
-  const eligibleOrders = useMemo(() => orders.filter(o => getApplicableStages(o).includes(stageKey)), [orders, stageKey]);
+  // Chỉ hiển thị đơn hàng còn đang sản xuất — đơn đã "Hoàn thành" (kể cả trong dung sai ±5%)
+  // sẽ bị ẩn khỏi danh sách chọn, tránh dropdown dài và chọn nhầm đơn đã xong.
+  const eligibleOrders = useMemo(() => orders.filter(o => getApplicableStages(o).includes(stageKey) && orderProgress(o).statusLabel !== "Hoàn thành"), [orders, stageKey]);
   useEffect(() => {
     if (!eligibleOrders.find(o => o.id === orderId)) setOrderId(eligibleOrders[0]?.id || "");
   }, [stageKey]); // eslint-disable-line
@@ -6462,17 +6464,19 @@ function MachineStatusModal({
   const [showLog, setShowLog] = useState(false);
   // Danh sách khách hàng / OD lấy từ đơn hàng thực tế (trang Đơn hàng & BOM) — để
   // người dùng CHỌN thay vì phải gõ tay từng chữ (tránh gõ sai chính tả).
+  // Chỉ lấy khách hàng/OD từ đơn hàng CÒN đang sản xuất — đơn đã "Hoàn thành" sẽ
+  // không hiện trong danh sách chọn nữa, tránh xổ ra quá nhiều lựa chọn.
   const customerOptions = useMemo(() => {
     const set = new Set();
     (orders || []).forEach(o => {
-      if (o.customer) set.add(String(o.customer).trim());
+      if (o.customer && orderProgress(o).statusLabel !== "Hoàn thành") set.add(String(o.customer).trim());
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b, "vi"));
   }, [orders]);
   const odOptions = useMemo(() => {
     const set = new Set();
     (orders || []).forEach(o => {
-      if (o.spec) set.add(String(o.spec).trim());
+      if (o.spec && orderProgress(o).statusLabel !== "Hoàn thành") set.add(String(o.spec).trim());
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b, "vi", {
       numeric: true
@@ -12495,7 +12499,7 @@ function KeoTrungPage({
     placeholder: "Nhập tên khách hàng..."
   }), /*#__PURE__*/React.createElement("datalist", {
     id: "mes-kt-customers"
-  }, [...new Set(orders.map(o => o.customer).filter(Boolean))].sort().map(c => /*#__PURE__*/React.createElement("option", {
+  }, [...new Set(orders.filter(o => orderProgress(o).statusLabel !== "Hoàn thành").map(o => o.customer).filter(Boolean))].sort().map(c => /*#__PURE__*/React.createElement("option", {
     key: c,
     value: c
   })))), /*#__PURE__*/React.createElement("div", {
