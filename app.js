@@ -7813,21 +7813,28 @@ function TVModePage({
     }
   }, row.val))), machinePie.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 14,
+      marginTop: 16,
       display: "flex",
       alignItems: "center",
-      gap: 14
+      gap: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: 156,
+      height: 156,
+      flexShrink: 0
     }
   }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
-    width: 92,
-    height: 92
+    width: 156,
+    height: 156
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: machinePie,
     dataKey: "value",
     nameKey: "name",
-    innerRadius: 28,
-    outerRadius: 50,
-    paddingAngle: 2
+    innerRadius: 50,
+    outerRadius: 76,
+    paddingAngle: 3
   }, machinePie.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
     key: i,
     fill: d.color
@@ -7836,27 +7843,75 @@ function TVModePage({
     contentStyle: tvTooltipStyle
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%,-50%)",
+      textAlign: "center",
+      pointerEvents: "none"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 30,
+      fontWeight: 800,
+      color: "#fff",
+      lineHeight: 1
+    }
+  }, totalMachines), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.55)",
+      marginTop: 2
+    }
+  }, "TỔNG MÁY"))), /*#__PURE__*/React.createElement("div", {
+    style: {
       display: "flex",
       flexDirection: "column",
-      gap: 5
+      gap: 9,
+      flex: 1
     }
-  }, machinePie.map(d => /*#__PURE__*/React.createElement("span", {
+  }, machinePie.map(d => /*#__PURE__*/React.createElement("div", {
     key: d.name,
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 6,
-      fontSize: 12,
-      color: "rgba(255,255,255,.8)"
+      justifyContent: "space-between",
+      gap: 10,
+      fontSize: 14.5,
+      color: "rgba(255,255,255,.9)"
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      width: 8,
-      height: 8,
-      borderRadius: 999,
-      background: d.color
+      display: "flex",
+      alignItems: "center",
+      gap: 8
     }
-  }), d.name, ": ", d.value))))),
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 11,
+      height: 11,
+      borderRadius: 999,
+      background: d.color,
+      flexShrink: 0
+    }
+  }), d.name), /*#__PURE__*/React.createElement("span", {
+    className: "mes-mono",
+    style: {
+      fontWeight: 800,
+      fontSize: 17,
+      color: d.color
+    }
+  }, d.value, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: "rgba(255,255,255,.5)",
+      marginLeft: 3
+    }
+  }, "(", totalMachines > 0 ? Math.round(d.value / totalMachines * 100) : 0, "%)"))))))),
   /* Khối 1b: Nhân sự */
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7975,27 +8030,64 @@ function TVModePage({
     }
   }, row.val))), staffPie.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
-      marginTop: 14,
+      marginTop: 16,
       display: "flex",
       justifyContent: "center"
     }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: 176,
+      height: 176
+    }
   }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
-    width: 110,
-    height: 110
+    width: 176,
+    height: 176
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: staffPie,
     dataKey: "value",
     nameKey: "name",
-    innerRadius: 36,
-    outerRadius: 62,
-    paddingAngle: 2
+    innerRadius: 58,
+    outerRadius: 86,
+    paddingAngle: 3
   }, staffPie.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
     key: i,
     fill: d.color
   }))), /*#__PURE__*/React.createElement(Tooltip, {
     formatter: v => `${v} người`,
     contentStyle: tvTooltipStyle
-  }))))),
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%,-50%)",
+      textAlign: "center",
+      pointerEvents: "none"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 34,
+      fontWeight: 800,
+      color: "#4ADE80",
+      lineHeight: 1
+    }
+  }, staffStats.present, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: "rgba(255,255,255,.4)"
+    }
+  }, "/", staffStats.total)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.55)",
+      marginTop: 3
+    }
+  }, "LÀM VIỆC")))),
   /* Khối 2: Tiến độ đơn hàng */
   /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8123,7 +8215,7 @@ function TVModePage({
   }, fmtNum(totalScrapQty), " kg phế liệu")), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      minHeight: 150
+      minHeight: 230
     }
   }, scrapByStagePie.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8132,15 +8224,21 @@ function TVModePage({
       textAlign: "center",
       paddingTop: 60
     }
-  }, "Chưa có dữ liệu phế liệu.") : /*#__PURE__*/React.createElement(ResponsiveContainer, {
+  }, "Chưa có dữ liệu phế liệu.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: "100%",
+      height: 230
+    }
+  }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
     width: "100%",
-    height: 150
+    height: 230
   }, /*#__PURE__*/React.createElement(PieChart, null, /*#__PURE__*/React.createElement(Pie, {
     data: scrapByStagePie,
     dataKey: "value",
     nameKey: "name",
-    innerRadius: 45,
-    outerRadius: 78,
+    innerRadius: 65,
+    outerRadius: 104,
     paddingAngle: 3
   }, scrapByStagePie.map((d, i) => /*#__PURE__*/React.createElement(Cell, {
     key: i,
@@ -8153,7 +8251,32 @@ function TVModePage({
       borderRadius: 8,
       color: "#fff"
     }
-  }))), scrapByStagePie.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%,-50%)",
+      textAlign: "center",
+      pointerEvents: "none"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mes-mono",
+    style: {
+      fontSize: 24,
+      fontWeight: 800,
+      color: "#fff",
+      lineHeight: 1
+    }
+  }, fmtNum(totalScrapQty)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      fontWeight: 700,
+      letterSpacing: ".04em",
+      color: "rgba(255,255,255,.55)",
+      marginTop: 2
+    }
+  }, "KG PHẾ"))), scrapByStagePie.length > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexWrap: "wrap",
@@ -8166,18 +8289,32 @@ function TVModePage({
     style: {
       display: "flex",
       alignItems: "center",
-      gap: 5,
-      fontSize: 12,
-      color: "rgba(255,255,255,.75)"
+      gap: 6,
+      fontSize: 13.5,
+      color: "rgba(255,255,255,.85)"
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      width: 9,
-      height: 9,
+      width: 10,
+      height: 10,
       borderRadius: 999,
-      background: d.color
+      background: d.color,
+      flexShrink: 0
     }
-  }), d.name))))))));
+  }), d.name, /*#__PURE__*/React.createElement("span", {
+    className: "mes-mono",
+    style: {
+      fontWeight: 800,
+      color: d.color
+    }
+  }, fmtNum(d.value), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: "rgba(255,255,255,.5)",
+      marginLeft: 3
+    }
+  }, "(", totalScrapQty > 0 ? Math.round(d.value / totalScrapQty * 100) : 0, "%)")))))))))));
 }
 function MachineGroup({
   type,
