@@ -7342,7 +7342,11 @@ function TVModePage({
       if (!ancestorMult || !isFinite(ancestorMult)) return;
       const targetScale = Math.min(availW / naturalW, availH / naturalH) * 0.985;
       let z = targetScale / ancestorMult;
-      z = Math.max(0.35, Math.min(z, 1.5));
+      // Sàn 0.22 (thay vì 0.35 trước đây): nội dung Chế độ TV đã nhiều hơn (thêm khối
+      // Hoạt động gần đây, phóng to các biểu đồ/danh sách), nên trên tivi HD nhỏ
+      // (1366x768, 1280x720...) tỉ lệ cần thiết có thể thấp hơn 0.35 — nếu giữ sàn cũ,
+      // nội dung sẽ bị tràn/cắt mất vài dòng dưới cùng thay vì thu vừa khung hình.
+      z = Math.max(0.22, Math.min(z, 1.5));
       setTvZoom(prev => Math.abs(prev - z) > 0.008 ? z : prev);
     }
     fit();
