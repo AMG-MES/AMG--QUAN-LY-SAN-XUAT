@@ -3445,6 +3445,8 @@ function genMachineSeed() {
         stage: type.stage,
         status,
         note: status === "broken" ? "Chờ thay linh kiện" : status === "maintenance" ? "Bảo trì định kỳ theo lịch" : "",
+        customerName: "",
+        currentOD: "",
         updatedAt: new Date().toISOString(),
         updatedBy: "system"
       });
@@ -3691,7 +3693,9 @@ function orderProgress(order) {
   const remainingQty = qty !== null ? Math.round((qty - completedQty) * 100) / 100 : null;
   let statusLabel = "Đang sản xuất";
   let statusColor = COLORS.amber;
-  if (qty && completedQty >= qty && qty > 0) {
+  // Dung sai ±5%: sản lượng đạt từ 95% chỉ tiêu trở lên vẫn được tính là Hoàn thành
+  // (tránh trường hợp lệch số liệu nhỏ/hao hụt khiến đơn gần xong bị treo "Đang sản xuất").
+  if (qty && qty > 0 && completedQty >= qty * 0.95) {
     statusLabel = "Hoàn thành";
     statusColor = COLORS.green;
   } else if (!anyStageStarted && completedQty === 0) {
@@ -6295,6 +6299,8 @@ function MachineStatusModal({
   } = useDialog();
   const [status, setStatus] = useState(machine.status);
   const [note, setNote] = useState(machine.note || "");
+  const [customerName, setCustomerName] = useState(machine.customerName || "");
+  const [currentOD, setCurrentOD] = useState(machine.currentOD || "");
   const [showLog, setShowLog] = useState(false);
   const downtimeLog = useMemo(() => [...(machine.downtimeLog || [])].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)), [machine.downtimeLog]);
   const stats = useMemo(() => {
@@ -6381,7 +6387,39 @@ function MachineStatusModal({
       background: status === k ? `${v.color}20` : COLORS.bgPanel2,
       color: status === k ? v.color : COLORS.textDim
     }
-  }, v.label)))), /*#__PURE__*/React.createElement(Field, {
+  }, v.label)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Tên khách hàng"
+  }, /*#__PURE__*/React.createElement("input", {
+    disabled: !isAdmin,
+    className: "mes-input",
+    style: {
+      fontSize: 17,
+      fontWeight: 700,
+      padding: "14px 14px"
+    },
+    value: customerName,
+    onChange: e => setCustomerName(e.target.value),
+    placeholder: "vd: SHENGSHING"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "OD sản phẩm đang chạy"
+  }, /*#__PURE__*/React.createElement("input", {
+    disabled: !isAdmin,
+    className: "mes-input",
+    style: {
+      fontSize: 17,
+      fontWeight: 700,
+      padding: "14px 14px"
+    },
+    value: currentOD,
+    onChange: e => setCurrentOD(e.target.value),
+    placeholder: "vd: 0.254BC"
+  }))), /*#__PURE__*/React.createElement(Field, {
     label: "Ghi chú / sự cố"
   }, /*#__PURE__*/React.createElement("textarea", {
     disabled: !isAdmin,
@@ -6507,7 +6545,7 @@ function MachineStatusModal({
   }), " Xóa máy"), /*#__PURE__*/React.createElement(Button, {
     variant: "primary",
     onClick: () => {
-      onSave(machine.id, status, note);
+      onSave(machine.id, status, note, customerName, currentOD);
       onClose();
     },
     style: {
@@ -8000,7 +8038,7 @@ function MachineGroup({
     style: {
       padding: "0 16px 16px",
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))",
+      gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
       gap: 8
     }
   }, machines.map(m => {
@@ -8013,12 +8051,19 @@ function MachineGroup({
         border: `1px solid ${st.color}50`,
         background: `${st.color}14`,
         borderRadius: 8,
-        padding: "8px 4px",
+        padding: "8px 10px",
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 3,
+        textAlign: "left"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
         alignItems: "center",
-        gap: 4
+        gap: 5
       }
     }, /*#__PURE__*/React.createElement(CircleDot, {
       size: 13,
@@ -8026,10 +8071,30 @@ function MachineGroup({
     }), /*#__PURE__*/React.createElement("span", {
       className: "mes-mono",
       style: {
-        fontSize: 10.5,
+        fontSize: 12,
+        fontWeight: 700,
         color: COLORS.text
       }
-    }, m.id));
+    }, m.id)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10.5,
+        color: m.customerName ? COLORS.text : COLORS.textFaint,
+        fontWeight: m.customerName ? 700 : 400,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        width: "100%"
+      }
+    }, m.customerName || "Chưa có khách hàng"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10.5,
+        color: m.currentOD ? COLORS.textDim : COLORS.textFaint,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        width: "100%"
+      }
+    }, "OD: ", m.currentOD || "—"));
   }), isAdmin && /*#__PURE__*/React.createElement("button", {
     onClick: e => {
       e.stopPropagation();
@@ -8143,7 +8208,7 @@ function MachinesPage({
     isAdmin: canEdit,
     canDelete: isAdmin,
     onClose: () => setSelected(null),
-    onSave: (id, status, note) => onUpdateMachine(id, status, note),
+    onSave: (id, status, note, customerName, currentOD) => onUpdateMachine(id, status, note, customerName, currentOD),
     onDelete: onDeleteMachine
   }));
 }
@@ -14118,7 +14183,7 @@ function AppInner() {
     const preview = removed.slice(0, 5).map(o => `${o.customer || o.id}/${o.spec || ""}`).join(", ");
     audit("order_delete", `Xóa ${ids.length} đơn hàng cùng lúc: ${preview}${removed.length > 5 ? "…" : ""}`);
   }
-  function handleUpdateMachine(id, status, note) {
+  function handleUpdateMachine(id, status, note, customerName, currentOD) {
     const machine = data.machines.find(m => m.id === id);
     const prevStatus = machine?.status;
     const nowIso = new Date().toISOString();
@@ -14148,6 +14213,8 @@ function AppInner() {
     db.collection(FS.machines).doc(id).update({
       status,
       note,
+      customerName: customerName || "",
+      currentOD: currentOD || "",
       downtimeLog,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: currentUser.fullName
