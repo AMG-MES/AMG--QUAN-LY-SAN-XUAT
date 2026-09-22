@@ -4692,12 +4692,80 @@ function StatCard({
     }
   }, sub));
 }
+function RadialFanGauge({
+  percent,
+  color,
+  size,
+  strokeWidth,
+  centerTop,
+  centerBottom
+}) {
+  const s = size || 128;
+  const sw = strokeWidth || 12;
+  const r = (s - sw) / 2;
+  const cx = s / 2;
+  const cy = s / 2;
+  const circumference = 2 * Math.PI * r;
+  const gaugeAngle = 270; // độ mở "xòe quạt"
+  const rotate = 90 + (360 - gaugeAngle) / 2;
+  const arcLen = gaugeAngle / 360 * circumference;
+  const clamped = Math.max(0, Math.min(100, percent || 0));
+  const progLen = clamped / 100 * arcLen;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: s,
+      height: s,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: s,
+    height: s,
+    style: {
+      position: "absolute",
+      top: 0,
+      left: 0
+    }
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: cx,
+    cy: cy,
+    r: r,
+    fill: "none",
+    stroke: `${color}22`,
+    strokeWidth: sw,
+    strokeLinecap: "round",
+    strokeDasharray: `${arcLen} ${circumference}`,
+    transform: `rotate(${rotate} ${cx} ${cy})`
+  }), progLen > 0 && /*#__PURE__*/React.createElement("circle", {
+    cx: cx,
+    cy: cy,
+    r: r,
+    fill: "none",
+    stroke: color,
+    strokeWidth: sw,
+    strokeLinecap: "round",
+    strokeDasharray: `${progLen} ${circumference}`,
+    transform: `rotate(${rotate} ${cx} ${cy})`,
+    style: {
+      transition: "stroke-dasharray .5s ease"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center"
+    }
+  }, centerTop, centerBottom));
+}
 function ProductionPipeline({
   stageTotals,
   visibleStages
 }) {
   const pipelineStages = visibleStages || STAGES;
-  const max = Math.max(1, ...pipelineStages.map(s => stageTotals[s.key] || 0));
   return /*#__PURE__*/React.createElement("div", {
     className: "mes-card",
     style: {
@@ -4738,8 +4806,19 @@ function ProductionPipeline({
       paddingBottom: 6
     }
   }, pipelineStages.map((s, i) => {
-    const total = stageTotals[s.key] || 0;
-    const h = 8 + total / max * 46;
+    const stageData = stageTotals[s.key] || {
+      ordered: 0,
+      done: 0,
+      remaining: 0
+    };
+    const ordered = stageData.ordered || 0;
+    const done = stageData.done || 0;
+    const remaining = stageData.remaining || 0;
+    const pct = ordered > 0 ? Math.min(100, done / ordered * 100) : 0;
+    let gaugeColor = COLORS.amber; // đang chạy
+    if (ordered > 0 && done >= ordered * 0.95) gaugeColor = COLORS.green; // hoàn thành (dung sai ±5%)
+    else if (done === 0) gaugeColor = COLORS.textFaint; // chưa bắt đầu
+    const pctLabel = ordered > 0 ? `${Math.round(pct)}%` : "—";
     return /*#__PURE__*/React.createElement(React.Fragment, {
       key: s.key
     }, /*#__PURE__*/React.createElement("div", {
@@ -4747,44 +4826,52 @@ function ProductionPipeline({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        minWidth: 96,
-        flexShrink: 0
+        minWidth: 150,
+        flexShrink: 0,
+        padding: "0 4px"
       }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "mes-mono",
+    }, /*#__PURE__*/React.createElement(RadialFanGauge, {
+      percent: pct,
+      color: gaugeColor,
+      size: 126,
+      strokeWidth: 12,
+      centerTop: /*#__PURE__*/React.createElement("div", {
+        className: "mes-mono",
+        style: {
+          fontSize: 24,
+          fontWeight: 800,
+          color: gaugeColor,
+          lineHeight: 1
+        }
+      }, pctLabel),
+      centerBottom: /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 9,
+          color: COLORS.textFaint,
+          fontWeight: 700,
+          letterSpacing: ".05em",
+          marginTop: 3
+        }
+      }, "ĐÃ CHẠY")
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 13,
-        fontWeight: 700,
-        color: COLORS.copperBright,
-        marginBottom: 6
-      }
-    }, fmtNum(total)), /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 30,
-        height: 56,
         display: "flex",
-        alignItems: "flex-end"
+        alignItems: "center",
+        gap: 8,
+        marginTop: 10
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: "100%",
-        height: h,
-        background: `linear-gradient(180deg, ${COLORS.copperBright}, ${COLORS.copper})`,
-        borderRadius: 4
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginTop: 10,
-        width: 88,
-        height: 88,
-        borderRadius: 18,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         border: `2px solid ${s.color}66`,
         background: `${s.color}1a`,
-        boxShadow: `0 3px 10px ${s.color}22`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        overflow: "hidden"
+        overflow: "hidden",
+        flexShrink: 0
       }
     }, s.photo ? /*#__PURE__*/React.createElement("img", {
       src: s.photo,
@@ -4797,24 +4884,80 @@ function ProductionPipeline({
         display: "block"
       }
     }) : /*#__PURE__*/React.createElement(STAGE_ICON_MAP[s.icon] || CircleDot, {
-      size: 40,
+      size: 20,
       color: s.color
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 13,
         color: COLORS.textDim,
-        marginTop: 8,
-        textAlign: "center",
+        textAlign: "left",
         whiteSpace: "nowrap",
-        fontWeight: 600
+        fontWeight: 700
       }
-    }, s.label)), i < pipelineStages.length - 1 && /*#__PURE__*/React.createElement("svg", {
+    }, s.label)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 10,
+        marginTop: 8,
+        padding: "5px 10px",
+        borderRadius: 8,
+        background: COLORS.bgInset
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 1
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 8,
+        color: COLORS.textFaint,
+        fontWeight: 700,
+        letterSpacing: ".03em"
+      }
+    }, "ĐƠN HÀNG"), /*#__PURE__*/React.createElement("span", {
+      className: "mes-mono",
+      style: {
+        fontSize: 11.5,
+        fontWeight: 700,
+        color: COLORS.blue
+      }
+    }, fmtNum(ordered))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 1,
+        alignSelf: "stretch",
+        background: `${COLORS.textFaint}33`
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 1
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 8,
+        color: COLORS.textFaint,
+        fontWeight: 700,
+        letterSpacing: ".03em"
+      }
+    }, "CÒN LẠI"), /*#__PURE__*/React.createElement("span", {
+      className: "mes-mono",
+      style: {
+        fontSize: 11.5,
+        fontWeight: 700,
+        color: remaining < 0 ? COLORS.green : COLORS.amber
+      }
+    }, fmtNum(remaining))))), i < pipelineStages.length - 1 && /*#__PURE__*/React.createElement("svg", {
       width: "34",
       height: "56",
       style: {
         flexShrink: 0,
-        alignSelf: "center",
-        marginTop: -28
+        alignSelf: "flex-start",
+        marginTop: 35
       }
     }, /*#__PURE__*/React.createElement("line", {
       x1: "0",
@@ -5239,11 +5382,25 @@ function DashboardPage({
   const stageTotals = useMemo(() => {
     const t = {};
     STAGES.forEach(s => {
-      t[s.key] = orders.reduce((acc, o) => acc + (o.stages?.[s.key]?.done || 0), 0);
+      // Chỉ tính trên các đơn THỰC SỰ đi qua công đoạn này (getApplicableStages) — vì
+      // không phải đơn nào cũng qua đủ 6 công đoạn (vd đơn TC không qua Ủ nhiệt, đơn
+      // dây ủ mềm chỉ dừng ở Kéo trung...). Nhờ vậy "Tổng đơn hàng" và "Còn lại" phản
+      // ánh đúng số lượng khách đặt cho riêng công đoạn đó, không bị cộng nhầm đơn khác.
+      const applicableOrders = orders.filter(o => getApplicableStages(o).includes(s.key));
+      const ordered = applicableOrders.reduce((acc, o) => acc + (typeof o.quantity === "number" ? o.quantity : 0), 0);
+      const done = applicableOrders.reduce((acc, o) => acc + (o.stages?.[s.key]?.done || 0), 0);
+      t[s.key] = {
+        ordered,
+        done,
+        remaining: Math.round((ordered - done) * 100) / 100
+      };
     });
     // Kéo trung: cộng thêm sản lượng phôi không gắn khách hàng cụ thể (không nằm trong
-    // stages.keo_trung.done của order nào) — lấy từ audit log để phản ánh đúng tổng thực tế.
-    t.keo_trung = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
+    // stages.keo_trung.done của order nào) — lấy từ audit log để phản ánh đúng tổng thực tế
+    // đã chạy. Phần này không thuộc đơn hàng cụ thể nào nên KHÔNG tính vào "Tổng đơn hàng"
+    // / "Còn lại" (những cột đó chỉ phản ánh đơn có tên khách hàng).
+    const extraKeoTrung = (auditLog || []).filter(a => a.type === "production_entry" && a.stageKey === "keo_trung" && typeof a.qty === "number").reduce((a, e) => a + e.qty, 0);
+    t.keo_trung.done += extraKeoTrung;
     return t;
   }, [orders, auditLog]);
   const machineStats = useMemo(() => {
